@@ -1,0 +1,52 @@
+{
+  "name": "tollwise",
+  "version": "0.1.0",
+  "description": "Local-first smart-routing proxy for LLM APIs: drop-in for the OpenAI and Anthropic SDKs, routes each request to the cheapest or fastest provider that meets the capabilities it actually needs.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nunomarques97/tollwise"
+  },
+  "homepage": "https://github.com/nunomarques97/tollwise#readme",
+  "bugs": {
+    "url": "https://github.com/nunomarques97/tollwise/issues"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "bin": {
+    "tollwise": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "test": "node --test test/**/*.test.ts",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.dashboard.json --noEmit",
+    "build:dashboard": "node scripts/build-dashboard.ts",
+    "prepare": "npm run build:dashboard",
+    "demo": "node scripts/demo.ts",
+    "verify:dashboard": "node scripts/verify-dashboard.ts",
+    "check": "npm run lint && npm run typecheck && npm test && node scripts/guard-keys.mjs --all",
+    "e2e:ollama": "node scripts/e2e-ollama.ts",
+    "bench:overhead": "node benchmarks/overhead.ts",
+    "bench:savings": "node benchmarks/savings.ts"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "0.127.0",
+    "@axe-core/playwright": "4.13.0",
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "24.13.5",
+    "autocannon": "8.0.0",
+    "openai": "7.19.0",
+    "playwright": "1.63.0",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "gpt-tokenizer": "4.0.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  }
+}

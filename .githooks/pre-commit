@@ -1,0 +1,16 @@
+#!/bin/sh
+# Blocks secrets from being committed, then lints/formats staged files with Biome
+# when it is installed. Enabled with: git config core.hooksPath .githooks
+set -e
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+node "$repo_root/scripts/guard-keys.mjs"
+
+biome_bin="$repo_root/node_modules/.bin/biome"
+if [ -x "$biome_bin" ]; then
+  staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+  if [ -n "$staged_files" ]; then
+    printf '%s\n' "$staged_files" | xargs "$biome_bin" check --no-errors-on-unmatched
+  fi
+fi
