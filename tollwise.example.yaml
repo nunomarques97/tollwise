@@ -1,0 +1,138 @@
+# Tollwise configuration example.
+#
+# Copy this file to tollwise.yaml and edit what you need. Every field is optional: without any file
+# Tollwise runs on the defaults shown here. Check your file at any time with:
+#
+#   tollwise config check              # uses ./tollwise.yaml when present
+#   tollwise config check --config path/to/file.yaml
+#
+# The file is chosen in this order: the --config path, else the TOLLWISE_CONFIG environment variable,
+# else ./tollwise.yaml. Environment variables override the file:
+#   TOLLWISE_HOST, TOLLWISE_PORT, TOLLWISE_LOG_LEVEL, and TOLLWISE_ACCESS_KEY (environment only).
+#
+# API keys never go in this file. Each provider names the environment variable that holds its key
+# (api_key_env); Tollwise rejects any value that looks like a literal key.
+
+server:
+  # Address to listen on. The default only accepts connections from this machine.
+  # Any other address (for example 0.0.0.0) also requires TOLLWISE_ACCESS_KEY to be set; every
+  # request must then carry that key.
+  host: 127.0.0.1
+  # Port to listen on.
+  port: 8484
+  # Largest request body accepted: a number of bytes or a size such as 512kb, 20mb (1 KB = 1024 bytes).
+  # Allowed range: 1kb to 512mb.
+  max_body_size: 20mb
+  # Extra host names or IP addresses clients may use to reach Tollwise. Every request's Host header
+  # must name 127.0.0.1, localhost or [::1] with the port above, the address in "host" (unless it is
+  # 0.0.0.0 or ::), or one of these; anything else is refused, which blocks DNS-rebinding attacks from
+  # web pages. Write bare names or addresses, without scheme or port. When host is 0.0.0.0, list here
+  # the names other machines use to reach this one.
+  allowed_hosts: []
+  # allowed_hosts:
+  #   - my-machine.local
+  #   - 192.168.1.20
+
+providers:
+  # Each provider is used only when enabled AND its key variable is set (Ollama needs no key).
+  # base_url overrides the provider's API address, for example to go through your own gateway.
+  # A provider that sends a key must use https://, unless base_url points at this machine
+  # (127.0.0.1 or localhost); plain http:// to another machine is refused so the key is never
+  # sent unencrypted. A keyless server on your network works over http:// with api_key_env: null.
+  anthropic:
+    enabled: true
+    base_url: https://api.anthropic.com
+    api_key_env: ANTHROPIC_API_KEY
+  openai:
+    enabled: true
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+  deepseek:
+    enabled: true
+    base_url: https://api.deepseek.com
+    api_key_env: DEEPSEEK_API_KEY
+  openrouter:
+    enabled: true
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+  ollama:
+    # Local models. The URL below is Ollama's default address.
+    enabled: true
+    base_url: http://127.0.0.1:11434
+    api_key_env: null
+
+routing:
+  # How to choose among providers that can serve a request with every capability it uses
+  # (tools, JSON mode, vision, context length, max output, streaming). Providers seen as down are
+  # skipped; a provider not checked yet is not treated as down.
+  #   cheapest - lowest estimated price (default). Estimated price =
+  #              input tokens x input price + output tokens x output price, where output tokens is
+  #              the request's max_tokens, or 1024 (capped at the model's max output) when not set.
+  #   fastest  - lowest recent median latency; providers not measured yet come last.
+  #   balanced - lowest score = 0.5 x price / highest price + 0.5 x latency / highest latency,
+  #              among the providers that can serve the request (not measured yet counts as highest).
+  #   pinned   - the target in "pinned" below first, when it is the requested model (or in its
+  #              equivalence group) and has every capability the request needs; otherwise cheapest.
+  policy: cheapest
+
+  # What to do when no provider satisfies the request's capabilities:
+  #   passthrough - send it to the model that was requested, unchanged (default)
+  #   fail        - return a clear error instead, naming what is missing
+  # A model that is not in the catalog is handled the same way.
+  on_no_candidate: passthrough
+
+  # Required when policy is "pinned".
+  # pinned:
+  #   provider: anthropic
+  #   model: claude-sonnet-4-5
+
+  # By default Tollwise only switches the PROVIDER of the model you asked for (for example the same
+  # model directly or through OpenRouter); it never swaps one model for another. An equivalence group
+  # lets it also choose between DIFFERENT models that you consider interchangeable. Opt in only for
+  # models whose answers are good enough for your use. A model may belong to one group only.
+  # List a model by its catalog canonical id (every provider that serves it joins) or by one
+  # provider's own model id (only that provider's entry joins).
+  equivalence_groups: []
+  # equivalence_groups:
+  #   - name: small-fast
+  #     models:
+  #       - gpt-5-mini
+  #       - claude-haiku-4-5
+  #       - deepseek-chat
+  #   - name: frontier
+  #     models:
+  #       - gpt-5
+  #       - claude-sonnet-4-5
+
+  # Built-in equivalence groups, one per model class, turned on by name (off by default):
+  #   frontier   - claude-opus-5, gpt-6-astra, deepseek-v4-pro-0813
+  #   small-fast - claude-haiku-4.5, gpt-5.6-luna, deepseek-v4.1-flash
+  # A preset becomes a group named like it: its models may not appear in any other group.
+  # See docs/equivalence-presets.md for why each is grouped and its known limits.
+  equivalence_presets: []
+  # equivalence_presets: [small-fast]
+
+  # Extra attempts on another eligible provider after an error or timeout (0 to 5).
+  retries: 1
+
+  timeouts:
+    # Time to open a connection to a provider.
+    connect_ms: 5000
+    # Time until the provider sends the first byte of its answer (must not exceed total_ms).
+    first_byte_ms: 120000
+    # Longest a single request may take, streaming included.
+    total_ms: 600000
+
+analytics:
+  # Record request metadata (provider, model, token counts, cost, latency) on this machine.
+  # Prompts, answers, headers, URLs and keys are never stored. false: no file is created.
+  enabled: true
+  # Storing prompts and answers is not available in this release; true is refused.
+  store_prompts: false
+  # SQLite file, relative to the directory Tollwise is started from. The folder is created if missing.
+  # Nothing is deleted automatically: stop Tollwise and delete the file to clear the history.
+  path: data/analytics.db
+
+logging:
+  # error, warn, info or debug. Logs never contain keys or request/response bodies.
+  level: info
