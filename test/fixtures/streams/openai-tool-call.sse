@@ -1,0 +1,18 @@
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call-mock-4","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"location\":\"San Francisco, "}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"CA\",\"unit\":\"celsius\",\"note\":\"bring an "}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"umbrella if "}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"it rains\"}"}}]},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}
+
+data: {"id":"chatcmpl-mock-3","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}
+
+data: [DONE]
+

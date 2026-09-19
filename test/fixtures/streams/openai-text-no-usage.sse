@@ -1,0 +1,12 @@
+data: {"id":"chatcmpl-mock-2","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-2","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"Hello there, "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-2","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"how can "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-2","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"I help?"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-2","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+

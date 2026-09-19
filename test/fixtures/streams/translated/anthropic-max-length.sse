@@ -1,0 +1,8 @@
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"content":"Once upon a"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"length"}]}
+
+data: [DONE]
+

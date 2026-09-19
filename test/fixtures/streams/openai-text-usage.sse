@@ -1,0 +1,20 @@
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"The capital "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"of France "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"is Paris.\n"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"It sits "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"on the "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{"content":"Seine."},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: {"id":"chatcmpl-mock-1","object":"chat.completion.chunk","created":1789801123,"model":"mock-openai-fast","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}
+
+data: [DONE]
+

@@ -1,0 +1,18 @@
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"toolu-mock-7","type":"function","function":{"name":"get_weather","arguments":""}}]},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"location\":\"San Francisco, "}}]},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"CA\",\"unit\":\"celsius\",\"note\":\"bring an "}}]},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"umbrella if "}}]},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"it rains\"}"}}]},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"tool_calls"}],"usage":null}
+
+data: {"id":"msg-mock-6","object":"chat.completion.chunk","created":1758000000,"model":"mock-anthropic-fast","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}
+
+data: [DONE]
+

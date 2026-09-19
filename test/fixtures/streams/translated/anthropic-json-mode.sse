@@ -1,0 +1,12 @@
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"content":"{\"name\": \"Ada\", "},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"content":"\"born\": 1815}"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[],"usage":{"prompt_tokens":30,"completion_tokens":15,"total_tokens":45}}
+
+data: [DONE]
+

@@ -1,0 +1,8 @@
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"content":"The answer "},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"id":"msg_01XFDUDYJgAACzvnptvVoYEL","object":"chat.completion.chunk","created":1758000000,"model":"claude-sonnet-4-5","choices":[{"index":0,"delta":{"content":"is"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+data: {"error":{"message":"cannot translate the response from the anthropic format to the openai format: incomplete_stream","type":"server_error","param":null,"code":"incomplete_stream"}}
+
