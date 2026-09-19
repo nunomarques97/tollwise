@@ -1,0 +1,289 @@
+# Tollwise pricing and capability catalog.
+#
+# Every price is in USD per 1,000,000 tokens, copied by hand from the public page named in
+# source_url on the date in verified_on. verified_on is the UTC calendar date of that check
+# (YYYY-MM-DD, not a local date or a timestamp), chosen because it is reproducible and
+# time-zone independent: the same check gives the same verified_on wherever or whenever in the
+# day it ran. Never edit a price without re-reading source_url and updating verified_on the same
+# day. Changes are reviewed as a diff of this file; prices are never overwritten silently.
+#
+# canonical_model groups the same underlying model across providers, e.g. OpenAI's own
+# "gpt-6-astra" and the same model served through OpenRouter as "openai/gpt-6-astra".
+# A canonical id names one exact model version (e.g. "deepseek-v4.1-flash", not "deepseek-flash"),
+# so an older or weaker release of the same family can never join the group by accident.
+#
+# Notes on specific entries:
+#   - Time-of-day pricing is not modelled. DeepSeek publishes an "off-peak" (most hours) and a
+#     "peak" (a few busy UTC windows) price, and OpenRouter applies weekday peak overrides to some
+#     DeepSeek models; this file records the off-peak (standard) rate for every such entry.
+#   - Tiered pricing is not modelled. OpenAI (direct and via OpenRouter) charges more per token
+#     for very long prompts (above 272K tokens); the fields below hold the base tier only, so
+#     costs for such prompts are understated.
+#   - Ollama entries are local models with no network price, so input/output are 0 and
+#     cached_input is null (Ollama has no prompt-caching discount to price). Ollama does not
+#     publish a max output limit separate from the context window, so max_output is set equal to
+#     context_window for these entries.
+#   - json_mode for Anthropic models reflects Claude's structured/forced-tool-call JSON output,
+#     not a `response_format` flag like OpenAI's; the effect (a JSON response that matches a
+#     schema) is the same from a routing point of view.
+
+models:
+  # ---------------------------------------------------------------- Anthropic (direct)
+  - provider: anthropic
+    model: claude-opus-5
+    canonical_model: claude-opus-5
+    price:
+      input: 5
+      output: 25
+      cached_input: 0.5
+    context_window: 1000000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://platform.claude.com/docs/en/models/overview
+    verified_on: "2026-09-19"
+
+  - provider: anthropic
+    model: claude-haiku-4-5-20251001
+    canonical_model: claude-haiku-4.5
+    price:
+      input: 1
+      output: 5
+      cached_input: 0.1
+    context_window: 200000
+    max_output: 64000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://platform.claude.com/docs/en/models/overview
+    verified_on: "2026-09-19"
+
+  # ---------------------------------------------------------------- OpenAI (direct)
+  - provider: openai
+    model: gpt-6-astra
+    canonical_model: gpt-6-astra
+    price:
+      input: 10
+      output: 50
+      cached_input: 1
+    context_window: 1050000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://developers.openai.com/api/docs/models/gpt-6-astra
+    verified_on: "2026-09-19"
+
+  - provider: openai
+    model: gpt-5.6-luna
+    canonical_model: gpt-5.6-luna
+    price:
+      input: 0.2
+      output: 1.2
+      cached_input: 0.02
+    context_window: 1050000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://developers.openai.com/api/docs/models/gpt-5.6-luna
+    verified_on: "2026-09-19"
+
+  # ---------------------------------------------------------------- DeepSeek (direct)
+  - provider: deepseek
+    model: deepseek-v4-pro
+    canonical_model: deepseek-v4-pro-0813
+    price:
+      input: 0.66
+      output: 1.98
+      cached_input: 0.022
+    context_window: 1000000
+    max_output: 384000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: false
+      streaming: true
+    source_url: https://api-docs.deepseek.com/quick_start/pricing/
+    verified_on: "2026-09-19"
+
+  - provider: deepseek
+    model: deepseek-flash
+    canonical_model: deepseek-v4.1-flash
+    price:
+      input: 0.15
+      output: 0.6
+      cached_input: 0.003
+    context_window: 1000000
+    max_output: 384000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://api-docs.deepseek.com/quick_start/pricing/
+    verified_on: "2026-09-19"
+
+  # ---------------------------------------------------------------- Same models via OpenRouter
+  - provider: openrouter
+    model: anthropic/claude-opus-5
+    canonical_model: claude-opus-5
+    price:
+      input: 5
+      output: 25
+      cached_input: 0.5
+    context_window: 1000000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/anthropic/claude-opus-5
+    verified_on: "2026-09-19"
+
+  - provider: openrouter
+    model: anthropic/claude-haiku-4.5
+    canonical_model: claude-haiku-4.5
+    price:
+      input: 1
+      output: 5
+      cached_input: 0.1
+    context_window: 200000
+    max_output: 64000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/anthropic/claude-haiku-4.5
+    verified_on: "2026-09-19"
+
+  - provider: openrouter
+    model: openai/gpt-6-astra
+    canonical_model: gpt-6-astra
+    price:
+      input: 10
+      output: 50
+      cached_input: 1
+    context_window: 1050000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/openai/gpt-6-astra
+    verified_on: "2026-09-19"
+
+  - provider: openrouter
+    model: openai/gpt-5.6-luna
+    canonical_model: gpt-5.6-luna
+    price:
+      input: 0.2
+      output: 1.2
+      cached_input: 0.02
+    context_window: 1050000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/openai/gpt-5.6-luna
+    verified_on: "2026-09-19"
+
+  - provider: openrouter
+    model: deepseek/deepseek-v4-pro-0813
+    canonical_model: deepseek-v4-pro-0813
+    price:
+      input: 0.57816
+      output: 1.73448
+      cached_input: 0.018396
+    context_window: 1048576
+    max_output: 393216
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: false
+      streaming: true
+    source_url: https://openrouter.ai/deepseek/deepseek-v4-pro-0813
+    verified_on: "2026-09-19"
+
+  - provider: openrouter
+    model: deepseek/deepseek-v4.1-flash
+    canonical_model: deepseek-v4.1-flash
+    price:
+      input: 0.15
+      output: 0.6
+      cached_input: 0.003
+    context_window: 1048576
+    max_output: 384000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/deepseek/deepseek-v4.1-flash
+    verified_on: "2026-09-19"
+
+  # ---------------------------------------------------------------- Ollama (local, free)
+  - provider: ollama
+    model: llama3.1:8b
+    canonical_model: llama3.1-8b
+    price:
+      input: 0
+      output: 0
+      cached_input: null
+    context_window: 128000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: false
+      streaming: true
+    source_url: https://ollama.com/library/llama3.1
+    verified_on: "2026-09-19"
+
+  - provider: ollama
+    model: qwen2.5:7b
+    canonical_model: qwen2.5-7b
+    price:
+      input: 0
+      output: 0
+      cached_input: null
+    context_window: 32000
+    max_output: 32000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: false
+      streaming: true
+    source_url: https://ollama.com/library/qwen2.5
+    verified_on: "2026-09-19"
+
+  - provider: ollama
+    model: gemma3:4b
+    canonical_model: gemma3-4b
+    price:
+      input: 0
+      output: 0
+      cached_input: null
+    context_window: 128000
+    max_output: 128000
+    capabilities:
+      tools: false
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://ollama.com/library/gemma3
+    verified_on: "2026-09-19"

@@ -1,0 +1,94 @@
+# Test-only catalog fixture for test/catalog-update.test.ts.
+# Comments and entry order here must survive a `catalog update --write`.
+
+models:
+  # A direct (non-openrouter) entry: catalog update must never touch it.
+  - provider: openai
+    model: gpt-6-astra
+    canonical_model: gpt-6-astra
+    price:
+      input: 10
+      output: 50
+      cached_input: 1
+    context_window: 1050000
+    max_output: 128000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: true
+      streaming: true
+    source_url: https://developers.openai.com/api/docs/models/gpt-6-astra
+    verified_on: "2026-01-01"
+
+  # Matches test/fixtures/openrouter-models.ts's "unchanged/model-a" exactly: no diff expected.
+  - provider: openrouter
+    model: unchanged/model-a
+    canonical_model: model-a
+    price:
+      input: 1
+      output: 2
+      cached_input: 0.5
+    context_window: 100000
+    max_output: 50000
+    capabilities:
+      tools: true
+      json_mode: true
+      vision: false
+      streaming: true
+    source_url: https://openrouter.ai/unchanged/model-a
+    verified_on: "2026-01-01"
+
+  # Upstream price has moved: expect a price-only diff, then --write updates just that.
+  - provider: openrouter
+    model: changed/model-b
+    canonical_model: model-b
+    price:
+      input: 5
+      output: 10
+      cached_input: null
+    context_window: 200000
+    max_output: 100000
+    capabilities:
+      tools: false
+      json_mode: false
+      vision: true
+      streaming: true
+    source_url: https://openrouter.ai/changed/model-b
+    verified_on: "2026-01-01"
+
+  # Upstream states only its prices and context length (test/fixtures/openrouter-models.ts's
+  # "sparse/model-e"): max_output, cached_input and every capability must stay as curated here.
+  - provider: openrouter
+    model: sparse/model-e
+    canonical_model: model-e
+    price:
+      input: 0.3
+      output: 0.6
+      cached_input: 0.1
+    context_window: 32000
+    max_output: 8000
+    capabilities:
+      tools: true
+      json_mode: false
+      vision: true
+      streaming: false
+    source_url: https://openrouter.ai/sparse/model-e
+    verified_on: "2026-01-01"
+
+  # Not in the upstream fixture: expect it reported as "removed", never deleted automatically.
+  - provider: openrouter
+    model: gone/model-d
+    canonical_model: model-d
+    price:
+      input: 1
+      output: 2
+      cached_input: null
+    context_window: 1000
+    max_output: 500
+    capabilities:
+      tools: false
+      json_mode: false
+      vision: false
+      streaming: true
+    source_url: https://openrouter.ai/gone/model-d
+    verified_on: "2026-01-01"
