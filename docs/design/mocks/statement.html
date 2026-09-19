@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tollwise dashboard - direction A: Statement</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --font-head: ui-serif, "Iowan Old Style", Charter, "Bitstream Charter", Cambria, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --r-s: 4px; --r-m: 8px;
+}
+[data-theme="light"] {
+  --bg: #F4F5F7; --surface: #FFFFFF; --text: #161A21; --muted: #586170;
+  --accent: #1F5AA6; --positive: #18704A; --line: #DDE1E7; --control: #8A93A1; --on-accent: #FFFFFF;
+}
+[data-theme="dark"] {
+  --bg: #101318; --surface: #171B22; --text: #E7EAEF; --muted: #9CA5B3;
+  --accent: #86B2F0; --positive: #63C995; --line: #2A303A; --control: #6B7584; --on-accent: #0B1220;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font-body); }
+.app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+aside { border-right: 1px solid var(--line); padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; }
+.brand { font: 600 20px/1.2 var(--font-head); letter-spacing: -0.01em; padding: 0 8px; }
+.brand small { display: block; font: 400 12px/1.4 var(--font-body); color: var(--muted); margin-top: 4px; }
+nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav a { display: block; padding: 8px; border-radius: var(--r-s); color: var(--muted); text-decoration: none; }
+nav a[aria-current] { color: var(--text); background: var(--bg); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+[data-theme="dark"] nav a[aria-current] { background: var(--surface); }
+.side-foot { margin-top: auto; display: grid; gap: 8px; font-size: 13px; color: var(--muted); padding: 0 8px; }
+main { padding: 32px 48px; max-width: 1080px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 32px; }
+h1 { font: 600 32px/1.2 var(--font-head); margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
+.controls { display: flex; gap: 12px; align-items: center; }
+select, button { font: inherit; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--control); border-radius: var(--r-s); min-height: 36px; padding: 0 12px; }
+.live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--positive); }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: 32px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; }
+.eq { display: grid; gap: 0; }
+.eq-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.eq-row .op { color: var(--muted); font-family: var(--font-num); }
+.eq-row .lbl { color: var(--muted); }
+.eq-row .lbl b { display: block; color: var(--text); font-weight: 600; }
+.eq-row .val { font: 500 22px/1.2 var(--font-num); font-variant-numeric: tabular-nums; }
+.eq-row.total { border-bottom: 0; border-top: 2px solid var(--text); margin-top: -1px; padding-top: 18px; }
+.eq-row.total .val { font-size: 40px; font-weight: 600; color: var(--positive); }
+.eq-row.total .pct { display: block; font: 500 14px var(--font-body); color: var(--muted); text-align: right; margin-top: 4px; }
+.facts { display: grid; gap: 20px; align-content: start; }
+.fact h2 { font: 600 13px/1.3 var(--font-body); color: var(--muted); margin: 0 0 4px; text-transform: none; }
+.fact p { margin: 0; font: 500 24px/1.2 var(--font-num); font-variant-numeric: tabular-nums; }
+.fact p small { font: 400 14px var(--font-body); color: var(--muted); }
+.note { margin-top: 24px; font-size: 13px; color: var(--muted); max-width: 68ch; }
+.menu { display: none; }
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); padding: 12px 16px; flex-direction: row; align-items: center; justify-content: space-between; }
+  aside nav, .side-foot span { display: none; }
+  .side-foot { margin: 0 0 0 auto; padding: 0; }
+  aside { gap: 8px; }
+  .menu { display: inline-flex; align-items: center; }
+  main { padding: 20px 16px; }
+  h1 { font-size: 26px; }
+  .top { margin-bottom: 20px; }
+  .sheet { grid-template-columns: 1fr; padding: 20px; gap: 24px; }
+  .eq-row .val { font-size: 18px; }
+  .eq-row.total .val { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">Tollwise<small>127.0.0.1:8484</small></div>
+    <button class="menu" aria-label="Open navigation">Menu</button>
+    <nav aria-label="Views"><ul>
+      <li><a href="#" aria-current="page">Overview</a></li>
+      <li><a href="#">Routing decisions</a></li>
+      <li><a href="#">Savings over time</a></li>
+      <li><a href="#">Provider health</a></li>
+    </ul></nav>
+    <div class="side-foot"><button id="theme" type="button">Dark theme</button><span>Prices from the local catalog</span></div>
+  </aside>
+  <main>
+    <div class="top">
+      <div><h1>Overview</h1><p class="sub"><span class="live"><i></i>Live, last request 13:11:03</span></p></div>
+      <div class="controls">
+        <label for="range" class="sub" style="margin:0">Range</label>
+        <select id="range"><option>Last hour</option><option selected>Last 24 hours</option><option>Last 7 days</option><option>Last 30 days</option></select>
+      </div>
+    </div>
+    <section class="sheet" aria-label="Summary for the last 24 hours">
+      <div class="eq">
+        <div class="eq-row"><span class="op"></span><span class="lbl"><b>Baseline</b>What the requested models would have cost</span><span class="val">$0.0228</span></div>
+        <div class="eq-row"><span class="op">&minus;</span><span class="lbl"><b>Spend</b>What the routed requests cost</span><span class="val">$0.0226</span></div>
+        <div class="eq-row total"><span class="op">=</span><span class="lbl"><b>Saved</b>Against the requested models' catalog price</span><span class="val">$0.000192<span class="pct">0.84% of baseline</span></span></div>
+      </div>
+      <div class="facts">
+        <div class="fact"><h2>Requests</h2><p>240 <small>0 errors</small></p></div>
+        <div class="fact"><h2>Usage basis</h2><p>240 <small>reported by providers</small></p><p style="font-size:16px;margin-top:4px">0 <small>estimated locally</small></p></div>
+        <div class="fact"><h2>Savings unknown</h2><p>0 <small>requests without a catalog price</small></p></div>
+      </div>
+    </section>
+    <p class="note">Savings compare each request's actual cost with the catalog price of the model the caller asked for. Requests whose requested model has no catalog price are counted as unknown, never as $0.</p>
+  </main>
+</div>
+<script>
+const q = new URLSearchParams(location.search);
+const root = document.documentElement;
+root.dataset.theme = q.get('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+const t = document.getElementById('theme');
+const label = () => { t.textContent = root.dataset.theme === 'dark' ? 'Light theme' : 'Dark theme'; };
+label(); t.onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; label(); };
+</script>
+</body>
+</html>

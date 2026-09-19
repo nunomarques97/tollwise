@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tollwise dashboard - direction B: Console</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 2px;
+}
+[data-theme="light"] {
+  --bg: #EDF1F6; --surface: #FFFFFF; --text: #0F1B2D; --muted: #4D5B70;
+  --accent: #8F5200; --positive: #17704A; --line: #D3DAE4; --control: #8190A5; --on-accent: #FFFFFF;
+}
+[data-theme="dark"] {
+  --bg: #0D1626; --surface: #132036; --text: #E4EBF5; --muted: #95A4BA;
+  --accent: #F0B550; --positive: #5FC996; --line: #22324D; --control: #62769A; --on-accent: #1A1200;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--font-body); }
+header { display: flex; align-items: center; gap: 24px; padding: 0 24px; height: 56px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { font: 700 15px var(--font-mono); letter-spacing: 0.02em; }
+.brand span { color: var(--accent); }
+header nav { display: flex; gap: 4px; }
+header nav a { font: 500 13px var(--font-mono); color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: var(--r); }
+header nav a[aria-current] { color: var(--text); background: var(--bg); }
+.spacer { flex: 1; }
+.seg { display: inline-flex; border: 1px solid var(--control); border-radius: var(--r); }
+.seg button { font: 500 13px var(--font-mono); background: none; color: var(--muted); border: 0; padding: 0 12px; min-height: 32px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.icon-btn { font: 500 13px var(--font-mono); background: none; color: var(--text); border: 1px solid var(--control); border-radius: var(--r); min-height: 32px; padding: 0 10px; }
+.status { font: 500 12px var(--font-mono); color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+.status i { width: 8px; height: 8px; background: var(--positive); display: inline-block; }
+main { padding: 24px; display: grid; gap: 24px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.tile { background: var(--surface); padding: 20px; min-height: 148px; display: flex; flex-direction: column; }
+.tile h2 { margin: 0; font: 500 12px var(--font-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.tile .v { font: 600 34px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; margin-top: 16px; }
+.tile .d { margin-top: auto; padding-top: 12px; font: 400 12px var(--font-mono); color: var(--muted); }
+.tile.save .v { color: var(--accent); }
+.tape { background: var(--surface); border: 1px solid var(--line); }
+.tape h2 { margin: 0; padding: 12px 20px; font: 500 12px var(--font-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+.tape ol { list-style: none; margin: 0; padding: 0; font: 13px/1.4 var(--font-mono); }
+.tape li { display: grid; grid-template-columns: 80px 170px 1fr 110px 100px; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.tape li:last-child { border-bottom: 0; }
+.tape .t, .tape .why { color: var(--muted); }
+.tape .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tape .sv { color: var(--positive); }
+@media (max-width: 720px) {
+  header { padding: 0 12px; gap: 12px; height: auto; min-height: 56px; flex-wrap: wrap; }
+  header nav { display: none; }
+  .status span { display: none; }
+  main { padding: 12px; gap: 12px; }
+  .rangebar { display: flex; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile { min-height: 116px; padding: 14px; }
+  .tile .v { font-size: 22px; margin-top: 10px; }
+  .tape li { grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 12px; }
+  .tape .t { grid-column: 1 / -1; }
+  .tape .why { grid-column: 1 / -1; }
+}
+
+.rangebar { display: none; }
+@media (max-width: 720px) { .top-range { display: none; } .rangebar { display: flex; } .rangebar button { flex: 1; min-height: 40px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">tollwise<span>_</span></div>
+  <nav aria-label="Views"><a href="#" aria-current="page">overview</a><a href="#">routing</a><a href="#">savings</a><a href="#">providers</a></nav>
+  <div class="spacer"></div>
+  <div class="seg top-range" role="group" aria-label="Range"><button aria-pressed="false">1h</button><button aria-pressed="true">24h</button><button aria-pressed="false">7d</button><button aria-pressed="false">30d</button></div>
+  <span class="status" role="status"><i></i><span>streaming</span></span>
+  <button class="icon-btn" id="theme" type="button">light</button>
+</header>
+<main>
+  <div class="seg rangebar" role="group" aria-label="Range"><button aria-pressed="false">1h</button><button aria-pressed="true">24h</button><button aria-pressed="false">7d</button><button aria-pressed="false">30d</button></div>
+  <section class="tiles" aria-label="Summary, last 24 hours">
+    <div class="tile"><h2>Requests</h2><div class="v">240</div><div class="d">0 errors</div></div>
+    <div class="tile"><h2>Spend</h2><div class="v">$0.0226</div><div class="d">240 reported &middot; 0 estimated</div></div>
+    <div class="tile"><h2>Baseline</h2><div class="v">$0.0228</div><div class="d">requested models, catalog price</div></div>
+    <div class="tile save"><h2>Saved</h2><div class="v">$0.000192</div><div class="d">0.84% &middot; 0 unknown</div></div>
+  </section>
+  <section class="tape" aria-label="Live requests">
+    <h2><span>live requests</span><span>newest first</span></h2>
+    <ol>
+      <li><span class="t">13:11:03</span><span>claude-opus-5 &rarr; openrouter</span><span class="why">after anthropic failed (HTTP 500)</span><span class="num">$0.000175</span><span class="num sv">+$0.000000</span></li>
+      <li><span class="t">13:11:03</span><span>deepseek-v4-pro &rarr; openrouter</span><span class="why">cheapest policy</span><span class="num">$0.000015</span><span class="num sv">+$0.000002</span></li>
+      <li><span class="t">13:11:03</span><span>gpt-6-astra &rarr; openai</span><span class="why">cheapest policy</span><span class="num">$0.000350</span><span class="num sv">+$0.000000</span></li>
+      <li><span class="t">13:11:03</span><span>claude-opus-5 &rarr; openrouter</span><span class="why">after anthropic failed (HTTP 429)</span><span class="num">$0.000175</span><span class="num sv">+$0.000000</span></li>
+      <li><span class="t">13:11:03</span><span>gpt-5.6-luna &rarr; deepseek</span><span class="why">cheapest policy</span><span class="num">$0.000005</span><span class="num sv">+$0.000003</span></li>
+      <li><span class="t">13:11:03</span><span>llama3.1:8b &rarr; ollama</span><span class="why">cheapest policy</span><span class="num">$0.000000</span><span class="num sv">+$0.000000</span></li>
+    </ol>
+  </section>
+</main>
+<script>
+const q = new URLSearchParams(location.search);
+const root = document.documentElement;
+root.dataset.theme = q.get('theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+const t = document.getElementById('theme');
+const label = () => { t.textContent = root.dataset.theme === 'dark' ? 'light' : 'dark'; };
+label(); t.onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; label(); };
+</script>
+</body>
+</html>

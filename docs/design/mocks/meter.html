@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tollwise dashboard - direction C: Meter</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --font: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --r-s: 6px; --r-m: 12px; --r-full: 999px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F7F7F8; --surface: #FFFFFF; --text: #1A1C21; --muted: #5C626C;
+  --accent: #2D56C8; --positive: #17704A; --warning: #8A5300; --danger: #B42318;
+  --line: #E3E5E9; --control: #80868F; --on-accent: #FFFFFF;
+  --meter-spend: #B7BDC7; --meter-track: #E3E5E9; --skeleton: #ECEDF0;
+  --warning-bg: #FDF4E6; --danger-bg: #FDECEA;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121316; --surface: #1B1D21; --text: #ECEDEF; --muted: #A2A7B0;
+  --accent: #8DA8FF; --positive: #6CC79C; --warning: #E5AA50; --danger: #F38A80;
+  --line: #2C2F35; --control: #6E7481; --on-accent: #0E1430;
+  --meter-spend: #4A4F58; --meter-track: #2C2F35; --skeleton: #25282D;
+  --warning-bg: #2A2217; --danger-bg: #2E1B1A;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+header { max-width: 1200px; margin: 0 auto; padding: var(--s-5) var(--s-6) 0; display: flex; align-items: center; gap: var(--s-6); flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; display: inline-flex; gap: var(--s-2); align-items: center; }
+.tabs { display: flex; gap: var(--s-5); }
+.tabs a { color: var(--muted); text-decoration: none; padding: var(--s-2) 0; border-bottom: 2px solid transparent; font-weight: 500; }
+.tabs a[aria-current] { color: var(--text); border-bottom-color: var(--accent); }
+.spacer { flex: 1; }
+.live { display: inline-flex; align-items: center; gap: var(--s-2); font-size: 13px; color: var(--muted); }
+.live i { width: 8px; height: 8px; border-radius: var(--r-full); background: var(--positive); }
+.live[data-s="connecting"] i { background: transparent; border: 2px solid var(--muted); }
+.live[data-s="paused"] i { background: var(--warning); border-radius: 1px; }
+.btn { font: inherit; font-size: 14px; color: var(--text); background: var(--surface); border: 1px solid var(--control); border-radius: var(--r-full); min-height: 36px; padding: 0 var(--s-4); cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+main { max-width: 1200px; margin: 0 auto; padding: var(--s-5) var(--s-6) var(--s-7); display: grid; gap: var(--s-5); }
+.bar { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--control); border-radius: var(--r-full); padding: 3px; }
+.seg button { font: inherit; font-size: 14px; border: 0; background: none; color: var(--muted); border-radius: var(--r-full); padding: 0 var(--s-4); min-height: 32px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); font-weight: 600; }
+.asof { font-size: 13px; color: var(--muted); }
+.hero { background: var(--surface); border-radius: var(--r-m); padding: var(--s-6); border: 1px solid var(--line); }
+.hero h1 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+.big { font-size: 64px; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: var(--s-2) 0 var(--s-1); overflow-wrap: anywhere; }
+.big.unknown { color: var(--muted); }
+.lead { font-size: 17px; color: var(--muted); margin: 0; max-width: 60ch; }
+.lead b { color: var(--positive); }
+.meter { margin: var(--s-6) 0 var(--s-3); }
+.track { height: 20px; border-radius: var(--r-s); background: var(--meter-track); display: flex; overflow: hidden; }
+.track .spend { background: var(--meter-spend); }
+.track .save { background: var(--positive); min-width: 4px; }
+.legend { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; color: var(--muted); gap: var(--s-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.basis { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-top: var(--s-5); }
+.chip { border: 1px solid var(--line); border-radius: var(--r-full); padding: var(--s-1) var(--s-3); font-size: 13px; color: var(--muted); }
+.chip b { color: var(--text); font-weight: 600; }
+.chip.warn { border-color: var(--warning); background: var(--warning-bg); color: var(--text); }
+.chip.warn b { color: var(--warning); }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s-5); }
+.card h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+.card .v { font-size: 32px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: var(--s-2); }
+.card p { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.card .v.unknown { color: var(--muted); }
+.banner { border-radius: var(--r-m); padding: var(--s-3) var(--s-4); display: flex; gap: var(--s-3); align-items: baseline; font-size: 14px; }
+.banner.warn { background: var(--warning-bg); border: 1px solid var(--warning); }
+.banner.error { background: var(--danger-bg); border: 1px solid var(--danger); }
+.banner strong { white-space: nowrap; }
+.skel { background: var(--skeleton); border-radius: var(--r-s); }
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-s); padding: 2px 6px; overflow-wrap: anywhere; }
+.gate { max-width: 440px; margin: var(--s-7) auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s-6); }
+.gate h1 { margin: 0 0 var(--s-2); font-size: 22px; letter-spacing: -0.01em; }
+.gate p { margin: 0 0 var(--s-5); color: var(--muted); }
+.gate label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.field { display: flex; gap: var(--s-2); }
+.field input { flex: 1; min-width: 0; font: 15px var(--font-mono); color: var(--text); background: var(--bg); border: 1px solid var(--control); border-radius: var(--r-s); min-height: 44px; padding: 0 var(--s-3); }
+.field .btn { border-radius: var(--r-s); min-height: 44px; }
+.gate .hint { font-size: 13px; color: var(--muted); margin: var(--s-2) 0 var(--s-5); }
+.gate .err { font-size: 14px; color: var(--danger); margin: var(--s-2) 0 0; }
+.gate .btn.primary { width: 100%; min-height: 44px; border-radius: var(--r-s); }
+@media (max-width: 720px) {
+  header { padding: var(--s-4) var(--s-4) 0; gap: var(--s-3); }
+  .tabs { order: 3; width: 100%; overflow-x: auto; gap: 20px; }
+  main { padding: var(--s-4) var(--s-4) var(--s-6); gap: var(--s-4); }
+  .hero { padding: 20px; }
+  .big { font-size: 44px; }
+  .banner { flex-direction: column; gap: 2px; }
+  .grid { grid-template-columns: 1fr; gap: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); }
+  .card { border: 0; border-radius: 0; padding: var(--s-4) 20px; display: grid; grid-template-columns: 1fr auto; column-gap: var(--s-4); align-items: baseline; }
+  .card + .card { border-top: 1px solid var(--line); }
+  .card .v { font-size: 22px; margin: 0; grid-row: 1 / 3; grid-column: 2; text-align: right; }
+  .card p { margin: 2px 0 0; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; padding: 0 var(--s-2); min-height: 40px; }
+  .gate { margin: var(--s-2) 0; max-width: none; padding: var(--s-5); }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="9" width="20" height="4" rx="2" fill="currentColor"/><rect x="15" y="9" width="6" height="4" rx="2" fill="var(--positive)"/></svg>Tollwise</div>
+  <nav class="tabs" id="tabs" aria-label="Views"><a href="#" aria-current="page">Overview</a><a href="#">Routing</a><a href="#">Savings</a><a href="#">Providers</a></nav>
+  <div class="spacer"></div>
+  <span class="live" id="live" role="status" data-s="live"><i aria-hidden="true"></i><span id="live-text">Live</span></span>
+  <button class="btn" id="theme" type="button">Dark</button>
+</header>
+<main id="main"></main>
+<script>
+// Real numbers: npm run demo -- --count 240 --seed 7, then GET /api/metrics/summary?range=24h.
+const REAL = { requests: 240, errors: 0, spend_usd: '0.022560', unpriced_requests: 0, baseline_usd: '0.022752', savings_usd: '0.000192', savings_percent: 0.84, unknown_savings_requests: 0, origin: { reported: 240, estimated: 0 } };
+// Illustrative state only (not measured): some requests left out of savings.
+const PARTIAL = { requests: 240, errors: 3, spend_usd: '0.023410', unpriced_requests: 6, baseline_usd: '0.021190', savings_usd: '0.000180', savings_percent: 0.85, unknown_savings_requests: 18, origin: { reported: 228, estimated: 9 } };
+const ALL_UNKNOWN = { requests: 12, errors: 0, spend_usd: 'unknown', unpriced_requests: 12, baseline_usd: 'unknown', savings_usd: 'unknown', savings_percent: null, unknown_savings_requests: 12, origin: { reported: 12, estimated: 0 } };
+const EMPTY = { requests: 0, errors: 0, spend_usd: '0.000000', unpriced_requests: 0, baseline_usd: '0.000000', savings_usd: '0.000000', savings_percent: null, unknown_savings_requests: 0, origin: { reported: 0, estimated: 0 } };
+
+const RANGES = [['1h', '1 hour', 'the last hour'], ['24h', '24 hours', 'the last 24 hours'], ['7d', '7 days', 'the last 7 days'], ['30d', '30 days', 'the last 30 days']];
+const n = (x) => x.toLocaleString('en-US');
+function usd(s) {
+  if (s === 'unknown') return 'Unknown';
+  const v = Number(s);
+  if (v === 0) return '$0.00';
+  if (Math.abs(v) >= 1) return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const d = Math.min(6, Math.max(2, 2 - Math.floor(Math.log10(Math.abs(v)))));
+  return '$' + v.toFixed(d);
+}
+const plural = (k, one, many) => `${n(k)} ${k === 1 ? one : many}`;
+
+function rangeBar(asof) {
+  return `<div class="bar"><div class="seg" role="group" aria-label="Time range">${RANGES.map(([k, l]) => `<button type="button" aria-pressed="${k === '24h'}">${l}</button>`).join('')}</div><span class="asof">${asof}</span></div>`;
+}
+function hero(d) {
+  const title = `<h1 id="saved">Saved in the last 24 hours</h1>`;
+  if (d.requests === 0) {
+    return `<section class="hero" aria-labelledby="saved">${title}<div class="big unknown">$0.00</div><p class="lead">No requests in this range yet. Point your SDK's <code>base_url</code> at <code>http://127.0.0.1:8484/v1</code> and send a request; it appears here as soon as it completes.</p></section>`;
+  }
+  const unknownAll = d.savings_usd === 'unknown';
+  const pct = d.savings_percent;
+  const bigCls = unknownAll ? 'big unknown' : 'big';
+  const lead = unknownAll
+    ? `None of these requests has a catalog price for the model the caller asked for, so there is nothing to compare against.`
+    : `<b>${pct === null ? '0%' : pct.toFixed(2).replace(/\.?0+$/, '') + '%'}</b> less than the requested models would have cost at catalog prices.`;
+  const spendPct = unknownAll || pct === null ? 100 : 100 - pct;
+  const meter = unknownAll ? '' : `<div class="meter"><div class="track" role="img" aria-label="Spend is ${spendPct.toFixed(2)}% of baseline; savings are ${pct.toFixed(2)}%"><div class="spend" style="width:${spendPct}%"></div><div class="save" style="width:${100 - spendPct}%"></div></div><div class="legend"><span><i style="background:var(--meter-spend)"></i>Spend</span><span><i style="background:var(--positive)"></i>Saved, of a baseline of ${usd(d.baseline_usd)}</span></div></div>`;
+  const u = d.unknown_savings_requests;
+  const unknownChip = u > 0
+    ? `<span class="chip warn"><b>${plural(u, 'request', 'requests')}</b> left out: savings unknown</span>`
+    : `<span class="chip">Savings known for <b>all requests</b></span>`;
+  return `<section class="hero" aria-labelledby="saved">${title}<div class="${bigCls}">${usd(d.savings_usd)}</div><p class="lead">${lead}</p>${meter}
+    <div class="basis"><span class="chip">Usage <b>${n(d.origin.reported)} reported</b> &middot; ${n(d.origin.estimated)} estimated</span>${unknownChip}<span class="chip">Prices verified <b>2026-09-19</b></span></div></section>`;
+}
+function cards(d) {
+  const spendNote = d.requests === 0 ? 'No requests yet' : d.spend_usd === 'unknown' ? 'No request could be priced' : d.unpriced_requests > 0 ? `Lower bound: ${plural(d.unpriced_requests, 'request', 'requests')} unpriced` : 'Every served request priced';
+  return `<div class="grid">
+    <section class="card"><h2>Requests</h2><div class="v">${n(d.requests)}</div><p>${plural(d.errors, 'error', 'errors')}</p></section>
+    <section class="card"><h2>Spend</h2><div class="v${d.spend_usd === 'unknown' ? ' unknown' : ''}">${usd(d.spend_usd)}</div><p>${spendNote}</p></section>
+    <section class="card"><h2>Baseline</h2><div class="v${d.baseline_usd === 'unknown' ? ' unknown' : ''}">${usd(d.baseline_usd)}</div><p>Requested models at catalog price</p></section>
+  </div>`;
+}
+function loading() {
+  return rangeBar('Loading&hellip;') + `<section class="hero" aria-busy="true" aria-label="Loading summary"><div class="skel" style="width:180px;height:18px"></div><div class="skel" style="width:320px;max-width:100%;height:56px;margin:14px 0 10px"></div><div class="skel" style="width:420px;max-width:100%;height:18px"></div><div class="skel" style="height:20px;margin-top:32px"></div></section>
+  <div class="grid">${'<section class="card"><div class="skel" style="width:90px;height:16px"></div><div class="skel" style="width:120px;height:32px;margin-top:10px"></div></section>'.repeat(3)}</div>`;
+}
+function gate(wrong) {
+  return `<form class="gate" onsubmit="return false"><h1>Enter the access key</h1><p>This Tollwise instance is protected by an access key. It is the value of <code>TOLLWISE_ACCESS_KEY</code> where Tollwise runs.</p>
+    <label for="key">Access key</label><div class="field"><input id="key" type="password" autocomplete="off" spellcheck="false" ${wrong ? 'aria-invalid="true" aria-describedby="key-err" value="not-the-key"' : ''}><button class="btn" type="button" aria-pressed="false">Show</button></div>
+    ${wrong ? '<p class="err" id="key-err">That key was not accepted. Check the value of TOLLWISE_ACCESS_KEY and try again.</p>' : ''}
+    <p class="hint">Kept only in this browser tab and sent as a request header, never in the address bar.</p><button class="btn primary" type="submit">Open dashboard</button></form>`;
+}
+
+const q = new URLSearchParams(location.search);
+const state = q.get('state') || 'live';
+const root = document.documentElement;
+root.dataset.theme = q.get('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+const main = document.getElementById('main');
+const live = document.getElementById('live');
+const liveText = document.getElementById('live-text');
+const setLive = (s, text) => { live.dataset.s = s; liveText.textContent = text; };
+
+if (state === 'locked' || state === 'wrong-key') {
+  document.getElementById('tabs').hidden = true; live.hidden = true;
+  main.innerHTML = gate(state === 'wrong-key');
+} else if (state === 'loading') {
+  setLive('connecting', 'Connecting'); main.innerHTML = loading();
+} else if (state === 'empty') {
+  main.innerHTML = rangeBar('Waiting for the first request') + hero(EMPTY) + cards(EMPTY);
+} else if (state === 'partial') {
+  main.innerHTML = rangeBar('Last request 13:11:03') + hero(PARTIAL) + cards(PARTIAL);
+} else if (state === 'unknown') {
+  main.innerHTML = rangeBar('Last request 13:11:03') + hero(ALL_UNKNOWN) + cards(ALL_UNKNOWN);
+} else if (state === 'offline') {
+  setLive('paused', 'Reconnecting');
+  main.innerHTML = rangeBar('As of 13:11:03') + `<div class="banner warn" role="alert"><strong>Live updates paused.</strong><span>The connection to Tollwise was lost. Retrying every 5 seconds; the numbers below are from 13:11:03.</span></div>` + hero(REAL) + cards(REAL);
+} else if (state === 'error') {
+  setLive('paused', 'Not connected');
+  main.innerHTML = rangeBar('') + `<div class="banner error" role="alert"><strong>Metrics unavailable.</strong><span>Analytics is off (analytics.enabled is false in the configuration), so no metrics are recorded. Turn it on and restart Tollwise to see metrics.</span></div>`;
+} else {
+  main.innerHTML = rangeBar('Last request 13:11:03') + hero(REAL) + cards(REAL);
+}
+
+const t = document.getElementById('theme');
+const label = () => { t.textContent = root.dataset.theme === 'dark' ? 'Light' : 'Dark'; t.setAttribute('aria-label', root.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'); };
+label(); t.onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; label(); };
+</script>
+</body>
+</html>
