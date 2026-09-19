@@ -1,0 +1,43 @@
+# Configuration for `npm run demo` (scripts/demo.ts).
+#
+# The demo runs entirely against five local mock providers, one per provider id in
+# catalog/models.yaml, so it needs no account, no real API key and makes no network call. The
+# base_urls below are illustrative: each mock server binds to an OS-assigned loopback port, so
+# scripts/demo.ts always overrides providers.<id>.base_url with the port actually chosen at
+# startup before this file is validated. Every value below still describes the real shape used:
+# every provider on 127.0.0.1, the routing policy, the one equivalence preset turned on and where
+# the analytics database is written.
+#
+# This file is not used by `tollwise start`; point --config at it only to inspect its shape with
+# `tollwise config check --config examples/demo.yaml` (the mock ports it names will not be live).
+
+providers:
+  anthropic:
+    base_url: http://127.0.0.1:4301
+  openai:
+    base_url: http://127.0.0.1:4302/v1
+  deepseek:
+    base_url: http://127.0.0.1:4303/v1
+  openrouter:
+    base_url: http://127.0.0.1:4304/v1
+  ollama:
+    base_url: http://127.0.0.1:4305
+
+server:
+  # A distinct port from the default 8484, so the demo does not collide with a real Tollwise
+  # instance already running; --port overrides this (test/demo.test.ts uses --port 0).
+  port: 8487
+
+routing:
+  policy: cheapest
+  # Opt-in: without a preset or group, routing only ever swaps the same canonical model across
+  # providers. The demo turns on the small-fast preset (docs/equivalence-presets.md), so the cheapest
+  # policy may serve a gpt-5.6-luna or claude-haiku-4.5 request with deepseek-v4.1-flash, and every
+  # such substitution shows in the x-tollwise-* headers and the dashboard (see scripts/demo.ts).
+  equivalence_presets: [small-fast]
+
+analytics:
+  path: data/demo.db
+
+logging:
+  level: info
