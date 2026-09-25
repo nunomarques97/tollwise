@@ -1,0 +1,321 @@
+{
+  "date": "2026-09-19T15:21:29.827Z",
+  "command": "npm run bench:savings",
+  "seed": 424242,
+  "node_version": "v24.14.0",
+  "tollwise_commit": "cc87f3925fdee45e20641260be0cdae06862bb7d",
+  "tollwise_dirty": true,
+  "catalog": {
+    "path": "catalog/models.yaml",
+    "verified_on": [
+      "2026-09-19"
+    ]
+  },
+  "method": {
+    "mock_providers": "benchmarks/savings.ts, one OpenAI-shaped (openai/deepseek/openrouter) and one Anthropic-shaped",
+    "usage_reported_by_mocks": "input tokens = ceil(content characters / 4) + 85 per image, where content is system text, message text and tool name/description/schema, the same for either wire format; output tokens = the request's own max_completion_tokens/max_tokens",
+    "real_component": "a real, in-process createTollwiseServer() handles every request; only the two mock providers are fake",
+    "assumed_provider_latency_ms": {
+      "anthropic": 700,
+      "openai": 900,
+      "openrouter": 1100,
+      "deepseek": 1400,
+      "ollama": 0
+    },
+    "latency_handling": "the health monitor holds only the assumed latencies; samples the proxy records against the loopback mocks are dropped"
+  },
+  "workload": {
+    "request_count": 54,
+    "requests_per_archetype": 6,
+    "archetypes": [
+      {
+        "name": "openai-short-qa",
+        "format": "openai",
+        "size": "small",
+        "needs": "none",
+        "candidate_models": [
+          "gpt-6-astra",
+          "gpt-5.6-luna",
+          "deepseek-v4-pro",
+          "deepseek-flash"
+        ]
+      },
+      {
+        "name": "openai-long-context-summary",
+        "format": "openai",
+        "size": "large",
+        "needs": "none",
+        "candidate_models": [
+          "gpt-6-astra",
+          "gpt-5.6-luna",
+          "deepseek-v4-pro",
+          "deepseek-flash"
+        ]
+      },
+      {
+        "name": "openai-tool-call",
+        "format": "openai",
+        "size": "medium",
+        "needs": "tools",
+        "candidate_models": [
+          "gpt-6-astra",
+          "gpt-5.6-luna",
+          "deepseek-v4-pro",
+          "deepseek-flash"
+        ]
+      },
+      {
+        "name": "openai-json-mode",
+        "format": "openai",
+        "size": "medium",
+        "needs": "json_mode",
+        "candidate_models": [
+          "gpt-6-astra",
+          "gpt-5.6-luna",
+          "deepseek-v4-pro",
+          "deepseek-flash"
+        ]
+      },
+      {
+        "name": "openai-vision",
+        "format": "openai",
+        "size": "medium",
+        "needs": "vision",
+        "candidate_models": [
+          "gpt-6-astra",
+          "gpt-5.6-luna",
+          "deepseek-flash"
+        ]
+      },
+      {
+        "name": "anthropic-short-qa",
+        "format": "anthropic",
+        "size": "small",
+        "needs": "none",
+        "candidate_models": [
+          "claude-opus-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      },
+      {
+        "name": "anthropic-long-context-summary",
+        "format": "anthropic",
+        "size": "large",
+        "needs": "none",
+        "candidate_models": [
+          "claude-opus-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      },
+      {
+        "name": "anthropic-tool-call",
+        "format": "anthropic",
+        "size": "medium",
+        "needs": "tools",
+        "candidate_models": [
+          "claude-opus-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      },
+      {
+        "name": "anthropic-vision",
+        "format": "anthropic",
+        "size": "medium",
+        "needs": "vision",
+        "candidate_models": [
+          "claude-opus-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      }
+    ]
+  },
+  "config_variants": [
+    {
+      "label": "default",
+      "description": "no equivalence groups: only a provider switch for the same catalog canonical model can happen",
+      "equivalence_groups": []
+    },
+    {
+      "label": "equivalence-example",
+      "description": "one opt-in equivalence group pairing gpt-5.6-luna with the cheaper deepseek-flash",
+      "equivalence_groups": [
+        {
+          "name": "gpt-5.6-luna-or-deepseek-flash",
+          "models": [
+            "gpt-5.6-luna",
+            "deepseek-flash"
+          ]
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "policy": "cheapest",
+      "config": "default",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 4,
+      "model_switches": 0,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> deepseek": 4,
+        "deepseek -> openrouter": 4,
+        "openai -> openai": 22
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.199247",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "0.000240",
+      "savings_percent": 0.12,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    },
+    {
+      "policy": "fastest",
+      "config": "default",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 8,
+      "model_switches": 0,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> openrouter": 8,
+        "openai -> openai": 22
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.199247",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "0.000240",
+      "savings_percent": 0.12,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    },
+    {
+      "policy": "balanced",
+      "config": "default",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 8,
+      "model_switches": 0,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> openrouter": 8,
+        "openai -> openai": 22
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.199247",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "0.000240",
+      "savings_percent": 0.12,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    },
+    {
+      "policy": "cheapest",
+      "config": "equivalence-example",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 15,
+      "model_switches": 11,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> deepseek": 4,
+        "deepseek -> openrouter": 4,
+        "openai -> deepseek": 11,
+        "openai -> openai": 11
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.198052",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "0.001435",
+      "savings_percent": 0.72,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    },
+    {
+      "policy": "fastest",
+      "config": "equivalence-example",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 8,
+      "model_switches": 4,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> openai": 4,
+        "deepseek -> openrouter": 4,
+        "openai -> openai": 22
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.199887",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "-0.000400",
+      "savings_percent": -0.2,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    },
+    {
+      "policy": "balanced",
+      "config": "equivalence-example",
+      "requests": 54,
+      "routed": 54,
+      "passthrough": 0,
+      "failed": 0,
+      "provider_switches": 19,
+      "model_switches": 11,
+      "routes": {
+        "anthropic -> anthropic": 24,
+        "deepseek -> openrouter": 8,
+        "openai -> deepseek": 11,
+        "openai -> openai": 11
+      },
+      "unknown_baseline": 0,
+      "unknown_baseline_cost_usd": "0.000000",
+      "total_cost_usd": "0.198052",
+      "total_baseline_usd": "0.199487",
+      "total_savings_usd": "0.001435",
+      "savings_percent": 0.72,
+      "latency_p50_ms_after_run": {
+        "anthropic": 700,
+        "openai": 900,
+        "deepseek": 1400,
+        "openrouter": 1100
+      }
+    }
+  ]
+}

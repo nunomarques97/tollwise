@@ -1,0 +1,754 @@
+{
+  "date": "2026-09-25T08:29:18.264Z",
+  "label": "modeled",
+  "modeled_note": "Every figure is modeled from public list prices in catalog/models.yaml, replayed against mock providers with assumed latencies and approximated token counts; none is a measured provider bill.",
+  "command": "npm run bench:savings",
+  "verify_command": "node benchmarks/savings.ts --verify-latest",
+  "seed": 424242,
+  "node_version": "v24.14.0",
+  "tollwise_commit": "e17b8156776d3a2b31208b63fe9988eebb945aaf",
+  "tollwise_dirty": true,
+  "catalog": {
+    "path": "catalog/models.yaml",
+    "verified_on": [
+      "2026-09-19"
+    ]
+  },
+  "method": {
+    "mock_providers": "benchmarks/savings.ts, one OpenAI-shaped (openai/deepseek/openrouter) and one Anthropic-shaped",
+    "usage_reported_by_mocks": "input tokens = ceil(content characters / 4) + 85 per image, where content is system text, message text and tool name/description/schema, the same for either wire format; output tokens = the request's own max_completion_tokens/max_tokens",
+    "chars_per_token": 4,
+    "image_input_tokens": 85,
+    "real_component": "a real, in-process createTollwiseServer() handles every request; only the two mock providers are fake",
+    "assumed_provider_latency_ms": {
+      "anthropic": 700,
+      "openai": 900,
+      "openrouter": 1100,
+      "deepseek": 1400,
+      "ollama": 0
+    },
+    "latency_handling": "the health monitor holds only the assumed latencies; samples the proxy records against the loopback mocks are dropped",
+    "substitution_counts": "read from each answer's x-tollwise-substituted, -provider, -model and -equivalence-group headers, checked against the request outcome the proxy reported"
+  },
+  "workloads": {
+    "mixed": {
+      "request_count": 54,
+      "requests_per_archetype": 6,
+      "archetypes": [
+        {
+          "name": "openai-short-qa",
+          "format": "openai",
+          "size": "small",
+          "needs": "none",
+          "candidate_models": [
+            "gpt-6-astra",
+            "gpt-5.6-luna",
+            "deepseek-v4-pro",
+            "deepseek-flash"
+          ]
+        },
+        {
+          "name": "openai-long-context-summary",
+          "format": "openai",
+          "size": "large",
+          "needs": "none",
+          "candidate_models": [
+            "gpt-6-astra",
+            "gpt-5.6-luna",
+            "deepseek-v4-pro",
+            "deepseek-flash"
+          ]
+        },
+        {
+          "name": "openai-tool-call",
+          "format": "openai",
+          "size": "medium",
+          "needs": "tools",
+          "candidate_models": [
+            "gpt-6-astra",
+            "gpt-5.6-luna",
+            "deepseek-v4-pro",
+            "deepseek-flash"
+          ]
+        },
+        {
+          "name": "openai-json-mode",
+          "format": "openai",
+          "size": "medium",
+          "needs": "json_mode",
+          "candidate_models": [
+            "gpt-6-astra",
+            "gpt-5.6-luna",
+            "deepseek-v4-pro",
+            "deepseek-flash"
+          ]
+        },
+        {
+          "name": "openai-vision",
+          "format": "openai",
+          "size": "medium",
+          "needs": "vision",
+          "candidate_models": [
+            "gpt-6-astra",
+            "gpt-5.6-luna",
+            "deepseek-flash"
+          ]
+        },
+        {
+          "name": "anthropic-short-qa",
+          "format": "anthropic",
+          "size": "small",
+          "needs": "none",
+          "candidate_models": [
+            "claude-opus-5",
+            "claude-haiku-4-5-20251001"
+          ]
+        },
+        {
+          "name": "anthropic-long-context-summary",
+          "format": "anthropic",
+          "size": "large",
+          "needs": "none",
+          "candidate_models": [
+            "claude-opus-5",
+            "claude-haiku-4-5-20251001"
+          ]
+        },
+        {
+          "name": "anthropic-tool-call",
+          "format": "anthropic",
+          "size": "medium",
+          "needs": "tools",
+          "candidate_models": [
+            "claude-opus-5",
+            "claude-haiku-4-5-20251001"
+          ]
+        },
+        {
+          "name": "anthropic-vision",
+          "format": "anthropic",
+          "size": "medium",
+          "needs": "vision",
+          "candidate_models": [
+            "claude-opus-5",
+            "claude-haiku-4-5-20251001"
+          ]
+        }
+      ],
+      "filler_paragraphs": {
+        "small": {
+          "min": 0,
+          "max": 0
+        },
+        "medium": {
+          "min": 2,
+          "max": 3
+        },
+        "large": {
+          "min": 8,
+          "max": 11
+        }
+      },
+      "shares": {
+        "format": {
+          "anthropic": 24,
+          "openai": 30
+        },
+        "needs": {
+          "json_mode": 6,
+          "none": 24,
+          "tools": 12,
+          "vision": 12
+        },
+        "size": {
+          "large": 12,
+          "medium": 30,
+          "small": 12
+        },
+        "requested_model": {
+          "claude-haiku-4-5-20251001": 15,
+          "claude-opus-5": 9,
+          "deepseek-flash": 4,
+          "deepseek-v4-pro": 4,
+          "gpt-5.6-luna": 11,
+          "gpt-6-astra": 11
+        }
+      }
+    },
+    "realistic": {
+      "request_count": 100,
+      "assumptions": [
+        "70% of requests name a small-fast model and 30% a frontier model",
+        "60% use the OpenAI Chat Completions format and 40% the Anthropic Messages format",
+        "58% plain text (38 short questions, 20 long-context summaries), 20% tool calls, 10% JSON mode (OpenAI format only), 12% vision",
+        "38% small, 42% medium and 20% large inputs, as the archetypes define them",
+        "an OpenAI-format request names an OpenAI model 3 times out of 4 and a DeepSeek model otherwise (seeded pick); a frontier vision request names gpt-6-astra, since deepseek-v4-pro has no vision",
+        "an Anthropic-format request names claude-opus-5 (frontier) or claude-haiku-4-5-20251001 (small-fast)"
+      ],
+      "segments": [
+        {
+          "archetype": "openai-short-qa",
+          "modelClass": "small-fast",
+          "count": 16
+        },
+        {
+          "archetype": "openai-long-context-summary",
+          "modelClass": "small-fast",
+          "count": 6
+        },
+        {
+          "archetype": "openai-tool-call",
+          "modelClass": "small-fast",
+          "count": 8
+        },
+        {
+          "archetype": "openai-json-mode",
+          "modelClass": "small-fast",
+          "count": 8
+        },
+        {
+          "archetype": "openai-vision",
+          "modelClass": "small-fast",
+          "count": 4
+        },
+        {
+          "archetype": "openai-short-qa",
+          "modelClass": "frontier",
+          "count": 6
+        },
+        {
+          "archetype": "openai-long-context-summary",
+          "modelClass": "frontier",
+          "count": 4
+        },
+        {
+          "archetype": "openai-tool-call",
+          "modelClass": "frontier",
+          "count": 4
+        },
+        {
+          "archetype": "openai-json-mode",
+          "modelClass": "frontier",
+          "count": 2
+        },
+        {
+          "archetype": "openai-vision",
+          "modelClass": "frontier",
+          "count": 2
+        },
+        {
+          "archetype": "anthropic-short-qa",
+          "modelClass": "small-fast",
+          "count": 12
+        },
+        {
+          "archetype": "anthropic-long-context-summary",
+          "modelClass": "small-fast",
+          "count": 6
+        },
+        {
+          "archetype": "anthropic-tool-call",
+          "modelClass": "small-fast",
+          "count": 6
+        },
+        {
+          "archetype": "anthropic-vision",
+          "modelClass": "small-fast",
+          "count": 4
+        },
+        {
+          "archetype": "anthropic-short-qa",
+          "modelClass": "frontier",
+          "count": 4
+        },
+        {
+          "archetype": "anthropic-long-context-summary",
+          "modelClass": "frontier",
+          "count": 4
+        },
+        {
+          "archetype": "anthropic-tool-call",
+          "modelClass": "frontier",
+          "count": 2
+        },
+        {
+          "archetype": "anthropic-vision",
+          "modelClass": "frontier",
+          "count": 2
+        }
+      ],
+      "models": {
+        "openai": {
+          "frontier": [
+            {
+              "model": "gpt-6-astra",
+              "weight": 3
+            },
+            {
+              "model": "deepseek-v4-pro",
+              "weight": 1
+            }
+          ],
+          "small-fast": [
+            {
+              "model": "gpt-5.6-luna",
+              "weight": 3
+            },
+            {
+              "model": "deepseek-flash",
+              "weight": 1
+            }
+          ]
+        },
+        "anthropic": {
+          "frontier": [
+            {
+              "model": "claude-opus-5",
+              "weight": 1
+            }
+          ],
+          "small-fast": [
+            {
+              "model": "claude-haiku-4-5-20251001",
+              "weight": 1
+            }
+          ]
+        }
+      },
+      "filler_paragraphs": {
+        "small": {
+          "min": 0,
+          "max": 0
+        },
+        "medium": {
+          "min": 2,
+          "max": 3
+        },
+        "large": {
+          "min": 8,
+          "max": 11
+        }
+      },
+      "shares": {
+        "model_class": {
+          "frontier": 30,
+          "small-fast": 70
+        },
+        "format": {
+          "anthropic": 40,
+          "openai": 60
+        },
+        "needs": {
+          "json_mode": 10,
+          "none": 58,
+          "tools": 20,
+          "vision": 12
+        },
+        "size": {
+          "large": 20,
+          "medium": 42,
+          "small": 38
+        },
+        "requested_model": {
+          "claude-haiku-4-5-20251001": 28,
+          "claude-opus-5": 12,
+          "deepseek-flash": 9,
+          "deepseek-v4-pro": 2,
+          "gpt-5.6-luna": 33,
+          "gpt-6-astra": 16
+        }
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "default",
+      "label": "modeled",
+      "description": "the mixed workload under the default configuration: provider switching only",
+      "workload": "mixed",
+      "config": {
+        "label": "default",
+        "description": "no equivalence group and no preset: only a provider switch for the same catalog canonical model can happen",
+        "equivalence_presets": [],
+        "equivalence_presets_version": 1,
+        "enabled_presets": []
+      },
+      "runs": [
+        {
+          "policy": "cheapest",
+          "config": "default",
+          "requests": 54,
+          "routed": 54,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 4,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 24,
+            "deepseek -> deepseek": 4,
+            "deepseek -> openrouter": 4,
+            "openai -> openai": 22
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.199247",
+          "total_baseline_usd": "0.199487",
+          "total_savings_usd": "0.000240",
+          "savings_percent": 0.12,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "fastest",
+          "config": "default",
+          "requests": 54,
+          "routed": 54,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 8,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 24,
+            "deepseek -> openrouter": 8,
+            "openai -> openai": 22
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.199247",
+          "total_baseline_usd": "0.199487",
+          "total_savings_usd": "0.000240",
+          "savings_percent": 0.12,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "balanced",
+          "config": "default",
+          "requests": 54,
+          "routed": 54,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 8,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 24,
+            "deepseek -> openrouter": 8,
+            "openai -> openai": 22
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.199247",
+          "total_baseline_usd": "0.199487",
+          "total_savings_usd": "0.000240",
+          "savings_percent": 0.12,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        }
+      ]
+    },
+    {
+      "id": "realistic-default",
+      "label": "modeled",
+      "description": "the realistic workload under the default configuration: provider switching only (control)",
+      "workload": "realistic",
+      "config": {
+        "label": "default",
+        "description": "no equivalence group and no preset: only a provider switch for the same catalog canonical model can happen",
+        "equivalence_presets": [],
+        "equivalence_presets_version": 1,
+        "enabled_presets": []
+      },
+      "runs": [
+        {
+          "policy": "cheapest",
+          "config": "default",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 2,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 40,
+            "deepseek -> deepseek": 9,
+            "deepseek -> openrouter": 2,
+            "openai -> openai": 49
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.273664",
+          "total_baseline_usd": "0.273849",
+          "total_savings_usd": "0.000185",
+          "savings_percent": 0.07,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "fastest",
+          "config": "default",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 11,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 40,
+            "deepseek -> openrouter": 11,
+            "openai -> openai": 49
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.273664",
+          "total_baseline_usd": "0.273849",
+          "total_savings_usd": "0.000185",
+          "savings_percent": 0.07,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "balanced",
+          "config": "default",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 11,
+          "model_switches": 0,
+          "routes": {
+            "anthropic -> anthropic": 40,
+            "deepseek -> openrouter": 11,
+            "openai -> openai": 49
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.273664",
+          "total_baseline_usd": "0.273849",
+          "total_savings_usd": "0.000185",
+          "savings_percent": 0.07,
+          "substituted_requests": 0,
+          "substitutions": [],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        }
+      ]
+    },
+    {
+      "id": "presets-on",
+      "label": "modeled",
+      "description": "the realistic workload with the frontier and small-fast presets turned on",
+      "workload": "realistic",
+      "config": {
+        "label": "presets-on",
+        "description": "routing.equivalence_presets: [frontier, small-fast]: a request may be served by another model of its class",
+        "equivalence_presets": [
+          "frontier",
+          "small-fast"
+        ],
+        "equivalence_presets_version": 1,
+        "enabled_presets": [
+          {
+            "name": "frontier",
+            "models": [
+              "claude-opus-5",
+              "gpt-6-astra",
+              "deepseek-v4-pro-0813"
+            ]
+          },
+          {
+            "name": "small-fast",
+            "models": [
+              "claude-haiku-4.5",
+              "gpt-5.6-luna",
+              "deepseek-v4.1-flash"
+            ]
+          }
+        ]
+      },
+      "runs": [
+        {
+          "policy": "cheapest",
+          "config": "presets-on",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 89,
+          "model_switches": 87,
+          "routes": {
+            "anthropic -> anthropic": 2,
+            "anthropic -> deepseek": 28,
+            "anthropic -> openrouter": 10,
+            "deepseek -> deepseek": 9,
+            "deepseek -> openrouter": 2,
+            "openai -> anthropic": 2,
+            "openai -> deepseek": 33,
+            "openai -> openrouter": 14
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.043280",
+          "total_baseline_usd": "0.273849",
+          "total_savings_usd": "0.230569",
+          "savings_percent": 84.2,
+          "substituted_requests": 87,
+          "substitutions": [
+            {
+              "served_provider": "anthropic",
+              "served_model": "claude-opus-5",
+              "equivalence_group": "frontier",
+              "requests": 2
+            },
+            {
+              "served_provider": "deepseek",
+              "served_model": "deepseek-flash",
+              "equivalence_group": "small-fast",
+              "requests": 61
+            },
+            {
+              "served_provider": "openrouter",
+              "served_model": "deepseek/deepseek-v4-pro-0813",
+              "equivalence_group": "frontier",
+              "requests": 24
+            }
+          ],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "fastest",
+          "config": "presets-on",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 60,
+          "model_switches": 60,
+          "routes": {
+            "anthropic -> anthropic": 40,
+            "deepseek -> anthropic": 11,
+            "openai -> anthropic": 49
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.239448",
+          "total_baseline_usd": "0.274299",
+          "total_savings_usd": "0.034851",
+          "savings_percent": 12.71,
+          "substituted_requests": 60,
+          "substitutions": [
+            {
+              "served_provider": "anthropic",
+              "served_model": "claude-haiku-4-5-20251001",
+              "equivalence_group": "small-fast",
+              "requests": 42
+            },
+            {
+              "served_provider": "anthropic",
+              "served_model": "claude-opus-5",
+              "equivalence_group": "frontier",
+              "requests": 18
+            }
+          ],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        },
+        {
+          "policy": "balanced",
+          "config": "presets-on",
+          "requests": 100,
+          "routed": 100,
+          "passthrough": 0,
+          "failed": 0,
+          "provider_switches": 65,
+          "model_switches": 63,
+          "routes": {
+            "anthropic -> anthropic": 2,
+            "anthropic -> openai": 28,
+            "anthropic -> openrouter": 10,
+            "deepseek -> openai": 9,
+            "deepseek -> openrouter": 2,
+            "openai -> anthropic": 2,
+            "openai -> openai": 33,
+            "openai -> openrouter": 14
+          },
+          "unknown_baseline": 0,
+          "unknown_baseline_cost_usd": "0.000000",
+          "total_cost_usd": "0.050510",
+          "total_baseline_usd": "0.273849",
+          "total_savings_usd": "0.223339",
+          "savings_percent": 81.56,
+          "substituted_requests": 63,
+          "substitutions": [
+            {
+              "served_provider": "anthropic",
+              "served_model": "claude-opus-5",
+              "equivalence_group": "frontier",
+              "requests": 2
+            },
+            {
+              "served_provider": "openai",
+              "served_model": "gpt-5.6-luna",
+              "equivalence_group": "small-fast",
+              "requests": 37
+            },
+            {
+              "served_provider": "openrouter",
+              "served_model": "deepseek/deepseek-v4-pro-0813",
+              "equivalence_group": "frontier",
+              "requests": 24
+            }
+          ],
+          "latency_p50_ms_after_run": {
+            "anthropic": 700,
+            "openai": 900,
+            "deepseek": 1400,
+            "openrouter": 1100
+          }
+        }
+      ]
+    }
+  ]
+}

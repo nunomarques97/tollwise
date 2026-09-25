@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-19T09:27:54.796Z",
+  "model": "llama3.2:latest",
+  "ollama_version": "0.34.2",
+  "node_version": "v24.14.0",
+  "sdk_versions": {
+    "openai": "7.19.0",
+    "@anthropic-ai/sdk": "0.127.0"
+  },
+  "cases": [
+    {
+      "case": "openai-sdk non-streaming",
+      "pass": true,
+      "duration_ms": 55
+    },
+    {
+      "case": "openai-sdk streaming",
+      "pass": true,
+      "duration_ms": 38
+    },
+    {
+      "case": "anthropic-sdk non-streaming (cross-format)",
+      "pass": true,
+      "duration_ms": 67
+    },
+    {
+      "case": "anthropic-sdk streaming (cross-format)",
+      "pass": true,
+      "duration_ms": 36
+    }
+  ]
+}
