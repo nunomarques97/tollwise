@@ -137,6 +137,7 @@ Later views keep this frame (header, tabs, range bar) and put their own primary 
 | Connecting | 2 px ring, `--muted` | "Connecting" | First load, or while opening the stream |
 | Paused | filled square, `--warning` | "Reconnecting" | The stream dropped; retry every 5 s |
 | Not connected | filled square, `--warning` | "Not connected" | The metrics API answered with an error that retrying will not fix |
+| Static demo | filled diamond, `--muted` | "Static demo" | The static demo (§15): always, and nothing else |
 
 The "as of" line in the range bar says "Last request HH:MM:SS" (local time, 24-hour) while live, "As of HH:MM:SS" while paused, "Waiting for the first request" when the range is empty, and "Loading…" while loading.
 
@@ -705,3 +706,23 @@ Don't:
 - Colour "Up" green, or rank providers by speed with colour.
 - Show a latency for a provider with no samples, or "0 ms" for a sub-millisecond one (it is "< 1 ms").
 - Show a provider's raw error message; only the normalised error kind, in words.
+
+## 15. Static demo
+
+The static demo (`docs/demo/`, built by `npm run build:demo-site`) is this dashboard, unchanged, reading a recorded snapshot instead of the Tollwise API. It adds no view, component or token; it only adds the banner and the status state below, and changes the "as of" line.
+
+### 15.1 Demo banner
+
+A §6.7 banner that is always present: the first child of `<main>`, above the range bar, in every view, theme and state, with 24 px below it. It cannot be dismissed and it is not `role="alert"` (it is there when the page loads, not an event): `role="note"` with the accessible name "About this demo".
+
+- Colours: `--highlight` background, 1 px `--accent` border, `--text` text, links in `--accent` and underlined (4.5:1 or more on `--highlight` in both themes, §2). Distinct from the warning and error banners, which keep their meaning.
+- Copy: "**Static demo.** Sample data from a modeled workload, not a live service. How the savings are modeled · Run Tollwise yourself". The first link goes to the "Savings (modeled)" section of `docs/benchmarks.md` on GitHub, the second to the README quick start.
+- A warning or error banner (§6.7) still appears in its own place, under the range bar.
+
+### 15.2 "Static demo" status
+
+The §6.1 indicator shows "Static demo" with a filled `--muted` diamond (a square turned 45°), a shape no other state uses. It never shows Live, Connecting or Reconnecting, never pulses, and no event stream or retry timer runs. The "as of" line says "Recorded YYYY-MM-DD" (the snapshot's recording date, UTC) instead of a clock. With no range in the URL fragment the demo opens on 30 days, the range whose figures match the modeled benchmark.
+
+### 15.3 At 390 px
+
+The banner follows §5: the lead-in stacks over the sentence, and the two links wrap with the sentence. No horizontal scroll.

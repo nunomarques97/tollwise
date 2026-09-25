@@ -29,10 +29,10 @@ export function rangeOption(id: RangeId): RangeOption {
   return RANGES.find((range) => range.id === id) ?? (RANGES[1] as RangeOption);
 }
 
-/** The range named by a URL fragment such as "#range=7d"; the default for anything else. */
-export function rangeFromHash(hash: string): RangeId {
+/** The range named by a URL fragment such as "#range=7d"; `fallback` (the default range) for anything else. */
+export function rangeFromHash(hash: string, fallback: RangeId = DEFAULT_RANGE): RangeId {
   const value = new URLSearchParams(hash.replace(/^#/, '')).get('range');
-  return value !== null && isRangeId(value) ? value : DEFAULT_RANGE;
+  return value !== null && isRangeId(value) ? value : fallback;
 }
 
 /** The URL fragment that keeps `range`: "#range=7d". */

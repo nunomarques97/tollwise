@@ -67,15 +67,16 @@ class ProviderRowNodes {
     setText(this.p95Value, row.p95Text);
     setText(this.meta, row.metaText);
 
+    // Checked by parent, not isConnected: a new row is updated before its item is in the document.
     if (row.plot === undefined) {
-      if (this.plot.isConnected) this.plot.replaceWith(this.noSamples);
+      if (this.plot.parentNode !== null) this.plot.replaceWith(this.noSamples);
     } else {
       // Positions change on the same elements, so the CSS transition eases them (DESIGN.md §14.6).
       this.bar.style.left = `${row.plot.barLeftPercent}%`;
       this.bar.style.width = `${row.plot.barWidthPercent}%`;
       this.dot.style.left = `${row.plot.p50Percent}%`;
       this.tick.style.left = `${row.plot.p95Percent}%`;
-      if (this.noSamples.isConnected) this.noSamples.replaceWith(this.plot);
+      if (this.noSamples.parentNode !== null) this.noSamples.replaceWith(this.plot);
     }
 
     const values = [

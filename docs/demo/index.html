@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+    <meta name="generator" content="Tollwise static demo build">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>Tollwise dashboard: static demo</title>
+    <meta name="description" content="A static demo of the Tollwise dashboard, showing sample data from a modeled workload.">
+    <link rel="icon" href="data:,">
+    <script src="theme-init.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="demo/entry.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header">
+      <span class="brand">
+        <svg class="brand-mark" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+          <rect class="brand-bar" x="1" y="9" width="20" height="4" rx="2"></rect>
+          <rect class="brand-saved" x="15" y="9" width="6" height="4" rx="2"></rect>
+        </svg>
+        Tollwise
+      </span>
+      <nav id="views" class="tabs" aria-label="Views" hidden>
+        <a href="#view=overview" data-view="overview" aria-current="page">Overview</a>
+        <a href="#view=routing" data-view="routing">Routing</a>
+        <a href="#view=savings" data-view="savings">Savings</a>
+        <a href="#view=providers" data-view="providers">Providers</a>
+      </nav>
+      <span class="header-spacer"></span>
+      <tw-live-status data-state="demo"></tw-live-status>
+      <tw-theme-toggle></tw-theme-toggle>
+    </header>
+    <main id="content" tabindex="-1">
+      <div class="banner is-demo" role="note" aria-label="About this demo">
+        <strong>Static demo.</strong>
+        <span>Sample data from a modeled workload, not a live service. <a href="https://github.com/nunomarques97/tollwise/blob/main/docs/benchmarks.md#savings-modeled">How the savings are modeled</a><span class="banner-sep" aria-hidden="true"> · </span><a href="https://github.com/nunomarques97/tollwise#quick-start">Run Tollwise yourself</a></span>
+      </div>
+      <div class="range-bar">
+        <tw-range-selector></tw-range-selector>
+        <span id="scope-text" class="scope-text" hidden></span>
+        <span id="as-of" class="as-of">Loading&hellip;</span>
+      </div>
+      <div id="banners" class="banners"></div>
+      <div id="overview" class="view">
+        <tw-savings-block></tw-savings-block>
+        <tw-kpi-cards></tw-kpi-cards>
+      </div>
+      <div id="routing" class="view" hidden>
+        <tw-requests-table></tw-requests-table>
+      </div>
+      <div id="savings" class="view" hidden>
+        <tw-savings-chart></tw-savings-chart>
+        <div class="grid2">
+          <tw-breakdown-card data-by="provider"></tw-breakdown-card>
+          <tw-breakdown-card data-by="model"></tw-breakdown-card>
+        </div>
+      </div>
+      <div id="providers" class="view" hidden>
+        <tw-providers-card></tw-providers-card>
+      </div>
+      <tw-access-form hidden></tw-access-form>
+      <noscript>
+        <p class="noscript">This static demo of the Tollwise dashboard needs JavaScript to show its sample data.</p>
+      </noscript>
+    </main>
+    <!-- Outside <main>: the drawer makes the header and <main> inert while it is open. -->
+    <tw-request-drawer></tw-request-drawer>
+  </body>
+</html>

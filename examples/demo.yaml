@@ -34,6 +34,8 @@ routing:
   # providers. The demo turns on the small-fast preset (docs/equivalence-presets.md), so the cheapest
   # policy may serve a gpt-5.6-luna or claude-haiku-4.5 request with deepseek-v4.1-flash, and every
   # such substitution shows in the x-tollwise-* headers and the dashboard (see scripts/demo.ts).
+  # `npm run demo -- --workload presets-on` replaces these two routing values with those of the
+  # savings benchmark's presets-on run: the cheapest policy with the frontier and small-fast presets.
   equivalence_presets: [small-fast]
 
 analytics:

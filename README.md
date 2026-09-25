@@ -11,6 +11,8 @@ Your code keeps using the official `openai` or `@anthropic-ai/sdk` package; you 
 
 **Modeled savings: 84.2% with the `frontier` and `small-fast` [equivalence presets](docs/equivalence-presets.md) on, 0.07% with the default configuration**, on the same realistic workload with the `cheapest` policy, at public list prices ([raw results](benchmarks/results/savings-2026-09-25.json), [method](docs/benchmarks.md#savings-modeled)). By default Tollwise only switches between providers of the model you asked for; serving a request with a different, cheaper model of the same class is opt-in and shows in every answer's headers. [Details below](#savings-and-performance).
 
+**[Try the static demo](https://nunomarques97.github.io/tollwise/demo/)** of the dashboard in your browser, with nothing to install. It is not a live service: it shows sample data from the modeled workload with the `frontier` and `small-fast` presets on, so its 30-day view shows the benchmark's 84.2% saved ([raw results](benchmarks/results/savings-2026-09-25.json)). The default configuration only switches between providers of the model you asked for. [How the demo was recorded](docs/demo-site.md).
+
 **Status: pre-release.** There is no published package yet; Tollwise runs from source.
 
 ## Quick start
@@ -97,6 +99,8 @@ x-tollwise-price-verified-on: 2026-09-19
 Then open the dashboard at `http://127.0.0.1:8484/dashboard`.
 
 **No provider key yet?** `npm run demo` starts five local stand-in providers and a Tollwise with the `small-fast` preset on at `http://127.0.0.1:8487`, sends a mix of requests and keeps the dashboard at `http://127.0.0.1:8487/dashboard` live until Ctrl+C. No account, key or network call is needed; see [`docs/demo.md`](docs/demo.md).
+
+**Just looking?** The [static demo](https://nunomarques97.github.io/tollwise/demo/) is the same dashboard with sample data from the modeled presets-on workload, 84.2% saved over 30 days ([raw results](benchmarks/results/savings-2026-09-25.json)); the default configuration only switches between providers of the model you asked for. To send that workload through a Tollwise on your machine, run `npm run demo -- --workload presets-on`: it replays the benchmark's 100 requests with the `frontier` and `small-fast` presets and the `cheapest` policy, then keeps the dashboard at `http://127.0.0.1:8487/dashboard` up until Ctrl+C. [`docs/demo-site.md`](docs/demo-site.md) says how the static demo is recorded and built.
 
 <details>
 <summary>How the output above was produced</summary>

@@ -71,12 +71,12 @@ const HEADER_VALUE_START = String.raw`[^\s:${VALUE_STOP}]`;
 // serialized JSON line (quote, backslash), or would re-mask `[REDACTED]` (brackets).
 const URL_PART_STOP = String.raw`"\x60\\<>{}\[\]`;
 
-const QUERY_NAME_LIST = String.raw`(?:api[_-]?key|access_token|token|secret|password|auth|key)=`;
+const QUERY_NAME_LIST = `(?:api[_-]?key|access_token|token|secret|password|auth|key)=`;
 // Guard: the name stands alone. Redaction: the name may also end a longer identifier after `_` or `-`
 // (`client_secret=`, `refresh_token=`, `OPENAI_API_KEY=`), but never after a letter or digit (`monkey=`);
 // it also accepts `authorization=`, the one header name whose query form no other name covers.
 const QUERY_NAMES = String.raw`\b${QUERY_NAME_LIST}`;
-const QUERY_NAMES_WIDE = String.raw`(?<![A-Za-z0-9])(?:${QUERY_NAME_LIST}|authorization=)`;
+const QUERY_NAMES_WIDE = `(?<![A-Za-z0-9])(?:${QUERY_NAME_LIST}|authorization=)`;
 
 const ASSIGNMENT_NAME_LIST = String.raw`(api[_-]?key|secret|token|password|passwd|auth)\b`;
 const ASSIGNMENT_TAIL = String.raw`\\{0,3}["']?\s{0,16}[:=]\s{0,16}\\{0,3}["']`;

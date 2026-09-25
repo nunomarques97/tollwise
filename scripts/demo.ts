@@ -19,7 +19,13 @@
 // x-tollwise-substituted header) and is marked "Substituted" in the dashboard. Every other scenario
 // asks for a model outside the preset and is only ever switched between providers of that model.
 //
-// Usage: npm run demo -- [--count N] [--seed S]
+// Workload "presets-on" (--workload presets-on): instead of the scenarios below, replays the savings
+// benchmark's realistic workload (generateRealisticWorkload() in benchmarks/savings.ts, imported, not
+// copied) with the benchmark's `cheapest` policy and its [frontier, small-fast] presets, and the mocks
+// report token usage computed from each request the way the benchmark's mocks do. The dashboard then
+// shows the benchmark's modeled presets-on savings; scripts/record-demo-snapshot.ts records it.
+//
+// Usage: npm run demo -- [--workload demo|presets-on] [--count N] [--seed S]
 //
 // Undocumented overrides, for test/demo.test.ts only: --port P (0 for an ephemeral port),
 // --analytics-path PATH (a temp file instead of data/demo.db), --quiet (suppress the per-request line).
@@ -35,19 +41,27 @@ import {
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import {
+  generateRealisticWorkload,
+  mockInputTokens,
+  PRESETS_ON_CONFIG,
+  requestedOutputTokens,
+  WORKLOAD_SEED,
+  type WorkloadRequest,
+} from '../benchmarks/savings.ts';
 import { type EventStore, openSqliteEventStore } from '../src/analytics/store.ts';
 import { loadCatalog } from '../src/catalog/index.ts';
 import type { Catalog } from '../src/catalog/schema.ts';
-import { ConfigSchema, type ProviderId } from '../src/config/schema.ts';
+import { type Config, ConfigSchema, type ProviderId } from '../src/config/schema.ts';
 import { createHealthMonitor, type HealthMonitor } from '../src/health/monitor.ts';
-import { createLogger } from '../src/log/logger.ts';
+import { createLogger, type Logger } from '../src/log/logger.ts';
 import { registerSecretValues } from '../src/log/redact.ts';
 import { buildRegistry } from '../src/providers/registry.ts';
-import { onRequestOutcome } from '../src/proxy/outcome.ts';
+import { onRequestOutcome, type RequestOutcome } from '../src/proxy/outcome.ts';
 import { baseUrl, createTollwiseServer, listen, stopServer } from '../src/server/server.ts';
 import { type MockProvider, startMockProvider } from '../test/fixtures/mock-provider.ts';
 
-const USAGE = `Usage: npm run demo -- [--count N] [--seed S]
+const USAGE = `Usage: npm run demo -- [--workload demo|presets-on] [--count N] [--seed S]
 
 Runs Tollwise against five local mock providers (one per provider id in catalog/models.yaml) with a
 seeded, reproducible mix of realistic traffic: both request formats, streaming and non-streaming,
@@ -56,6 +70,14 @@ routing fall back to another candidate. No account, no real API key and no netwo
 is ever made.
 
 Options:
+  --workload W  The traffic to send. Default: demo.
+                  demo        the mix above, with the small-fast preset from examples/demo.yaml.
+                  presets-on  the savings benchmark's realistic workload (100 requests, see
+                              docs/benchmarks.md) with the cheapest policy and the frontier and
+                              small-fast presets on, so the dashboard shows its modeled savings.
+                              Sends the workload once, then keeps serving the dashboard until
+                              Ctrl+C; with --count N it sends N requests (repeating the workload in
+                              order) and stops. --seed does not apply: the workload has a fixed seed.
   --count N     Stop after N requests. Default: run until Ctrl+C (SIGINT or SIGTERM).
   --seed S      Seed for the deterministic, reproducible request mix. Default: 1.
   --help, -h    Show this help and exit.
@@ -66,7 +88,13 @@ const SEND_INTERVAL_MS = 250;
 
 // ---------------------------------------------------------------- argument parsing
 
+/** The traffic a demo run sends: the demo's own scenarios, or the savings benchmark's realistic workload. */
+export type DemoWorkload = 'demo' | 'presets-on';
+
+const WORKLOADS: readonly DemoWorkload[] = ['demo', 'presets-on'];
+
 interface DemoArgs {
+  readonly workload: DemoWorkload;
   readonly count: number | undefined;
   readonly seed: string;
   readonly port: number | undefined;
@@ -75,8 +103,9 @@ interface DemoArgs {
 }
 
 function parseArgs(args: readonly string[]): DemoArgs | { exit: number } {
+  let workload: DemoWorkload = 'demo';
   let count: number | undefined;
-  let seed = '1';
+  let seed: string | undefined;
   let port: number | undefined;
   let analyticsPath: string | undefined;
   let quiet = false;
@@ -86,6 +115,17 @@ function parseArgs(args: readonly string[]): DemoArgs | { exit: number } {
     if (arg === '--help' || arg === '-h') {
       console.log(USAGE);
       return { exit: 0 };
+    }
+    if (arg === '--workload' || arg === '-w') {
+      index += 1;
+      const value = args[index];
+      const known = WORKLOADS.find((name) => name === value);
+      if (known === undefined) {
+        console.error(`tollwise demo: --workload needs one of: ${WORKLOADS.join(', ')}`);
+        return { exit: 2 };
+      }
+      workload = known;
+      continue;
     }
     if (arg === '--count' || arg === '-n') {
       index += 1;
@@ -137,7 +177,11 @@ function parseArgs(args: readonly string[]): DemoArgs | { exit: number } {
     console.error(USAGE);
     return { exit: 2 };
   }
-  return { count, seed, port, analyticsPath, quiet };
+  if (workload === 'presets-on' && seed !== undefined) {
+    console.error('tollwise demo: --seed does not apply to --workload presets-on, which uses the benchmark seed');
+    return { exit: 2 };
+  }
+  return { workload, count, seed: seed ?? '1', port, analyticsPath, quiet };
 }
 
 // ---------------------------------------------------------------- deterministic pseudo-randomness
@@ -373,16 +417,20 @@ async function sendOne(
   // Drains the body whether it is a single JSON object or an SSE stream, so the connection settles
   // cleanly before the next request; the demo only needs the response headers below.
   await response.text().catch(() => undefined);
-  if (quiet) return;
-  const provider = response.headers.get('x-tollwise-provider') ?? 'none';
-  const model = response.headers.get('x-tollwise-model') ?? 'none';
-  const routed = response.headers.get('x-tollwise-routed') ?? 'false';
-  const attempts = response.headers.get('x-tollwise-attempts') ?? '0';
-  const substituted = response.headers.get('x-tollwise-substituted') ?? 'false';
-  const savings = response.headers.get('x-tollwise-savings-usd');
+  if (!quiet) printLine(index, scenario.name, response.status, response.headers);
+}
+
+/** Prints one request's line: where it went, as its x-tollwise-* headers say. */
+function printLine(index: number, name: string, status: number, headers: Headers): void {
+  const provider = headers.get('x-tollwise-provider') ?? 'none';
+  const model = headers.get('x-tollwise-model') ?? 'none';
+  const routed = headers.get('x-tollwise-routed') ?? 'false';
+  const attempts = headers.get('x-tollwise-attempts') ?? '0';
+  const substituted = headers.get('x-tollwise-substituted') ?? 'false';
+  const savings = headers.get('x-tollwise-savings-usd');
   const suffix = savings === null ? '' : ` savings=$${savings}`;
   console.log(
-    `[${String(index + 1).padStart(3, ' ')}] ${scenario.name.padEnd(36, ' ')} -> ${response.status} ` +
+    `[${String(index + 1).padStart(3, ' ')}] ${name.padEnd(36, ' ')} -> ${status} ` +
       `provider=${provider} model=${model} routed=${routed} substituted=${substituted} ` +
       `attempts=${attempts}${suffix}`,
   );
@@ -493,8 +541,8 @@ async function startAnthropicFaultInjector(target: MockProvider): Promise<FaultI
 
 interface DemoMocks {
   readonly anthropic: MockProvider;
-  /** The loopback front Tollwise's anthropic base_url points at; see startAnthropicFaultInjector(). */
-  readonly anthropicFront: FaultInjector;
+  /** The loopback front Tollwise's anthropic base_url points at, for the demo workload; see startAnthropicFaultInjector(). */
+  readonly anthropicFront: FaultInjector | undefined;
   readonly openai: MockProvider;
   readonly deepseek: MockProvider;
   readonly openrouter: MockProvider;
@@ -505,17 +553,38 @@ function modelsFor(catalog: Catalog, provider: ProviderId): string[] {
   return catalog.models.filter((entry) => entry.provider === provider).map((entry) => entry.model);
 }
 
-/** Starts one mock per provider id, with GET /v1/models lists that match catalog/models.yaml. */
-async function startMockProviders(catalog: Catalog): Promise<DemoMocks> {
+/** The token usage the savings benchmark's mocks report: computed from the request actually received. */
+function benchmarkUsage(body: Record<string, unknown>): { input: number; output: number } {
+  return { input: mockInputTokens(body), output: requestedOutputTokens(body) };
+}
+
+/**
+ * Starts one mock per provider id, with GET /v1/models lists that match catalog/models.yaml. For the
+ * presets-on workload the mocks report benchmark usage and no anthropic failure is injected, so every
+ * request is priced exactly as the benchmark prices it.
+ */
+async function startMockProviders(catalog: Catalog, workload: DemoWorkload): Promise<DemoMocks> {
+  const usage = workload === 'presets-on' ? { usage: benchmarkUsage } : {};
   const [anthropic, openai, deepseek, openrouter, ollama] = await Promise.all([
-    startMockProvider({ models: { anthropic: modelsFor(catalog, 'anthropic') } }),
-    startMockProvider({ models: { openai: modelsFor(catalog, 'openai') } }),
-    startMockProvider({ models: { openai: modelsFor(catalog, 'deepseek') } }),
-    startMockProvider({ models: { openai: modelsFor(catalog, 'openrouter') } }),
-    startMockProvider({ models: { openai: modelsFor(catalog, 'ollama') } }),
+    startMockProvider({ models: { anthropic: modelsFor(catalog, 'anthropic') }, ...usage }),
+    startMockProvider({ models: { openai: modelsFor(catalog, 'openai') }, ...usage }),
+    startMockProvider({ models: { openai: modelsFor(catalog, 'deepseek') }, ...usage }),
+    startMockProvider({ models: { openai: modelsFor(catalog, 'openrouter') }, ...usage }),
+    startMockProvider({ models: { openai: modelsFor(catalog, 'ollama') }, ...usage }),
   ]);
-  const anthropicFront = await startAnthropicFaultInjector(anthropic);
+  const anthropicFront = workload === 'demo' ? await startAnthropicFaultInjector(anthropic) : undefined;
   return { anthropic, anthropicFront, openai, deepseek, openrouter, ollama };
+}
+
+function closeMocks(mocks: DemoMocks): Promise<unknown> {
+  return Promise.all([
+    mocks.anthropicFront?.close(),
+    mocks.anthropic.close(),
+    mocks.openai.close(),
+    mocks.deepseek.close(),
+    mocks.openrouter.close(),
+    mocks.ollama.close(),
+  ]);
 }
 
 // ---------------------------------------------------------------- configuration
@@ -528,63 +597,141 @@ const DEMO_ENV: Readonly<Record<string, string>> = {
   OPENROUTER_API_KEY: 'tollwise-demo-openrouter-fake-key', // tollwise-allow-secret
 };
 
+/** The routing policy the presets-on workload runs with: that of the benchmark's presets-on / cheapest run. */
+export const PRESETS_ON_POLICY = 'cheapest';
+
+const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DEMO_CONFIG_PATH = path.join(REPO_ROOT, 'examples', 'demo.yaml');
+
 function providerOverride(rawProviders: Record<string, unknown>, id: string, baseUrl: string): Record<string, unknown> {
   return { ...(rawProviders[id] as Record<string, unknown> | undefined), base_url: baseUrl };
 }
 
-/** Reads examples/demo.yaml and overrides the fields that must reflect this run's actual state. */
-function buildDemoConfig(demoConfigPath: string, mocks: DemoMocks, args: DemoArgs) {
-  const raw = (parseYaml(readFileSync(demoConfigPath, 'utf8')) ?? {}) as Record<string, unknown>;
+/**
+ * Reads examples/demo.yaml and overrides the fields that must reflect this run's actual state; for the
+ * presets-on workload also the routing policy and presets of the benchmark's presets-on run.
+ */
+function buildDemoConfig(mocks: DemoMocks, workload: DemoWorkload, analyticsPath: string | undefined): Config {
+  const raw = (parseYaml(readFileSync(DEMO_CONFIG_PATH, 'utf8')) ?? {}) as Record<string, unknown>;
   const rawProviders = (raw.providers as Record<string, unknown> | undefined) ?? {};
+  const rawRouting = (raw.routing as Record<string, unknown> | undefined) ?? {};
   const rawAnalytics = (raw.analytics as Record<string, unknown> | undefined) ?? {};
   const rawServer = (raw.server as Record<string, unknown> | undefined) ?? {};
+  const anthropicUrl = mocks.anthropicFront?.url ?? mocks.anthropic.url;
 
   const merged = {
     ...raw,
     providers: {
       ...rawProviders,
-      anthropic: providerOverride(rawProviders, 'anthropic', mocks.anthropicFront.url),
+      anthropic: providerOverride(rawProviders, 'anthropic', anthropicUrl),
       openai: providerOverride(rawProviders, 'openai', `${mocks.openai.url}/v1`),
       deepseek: providerOverride(rawProviders, 'deepseek', `${mocks.deepseek.url}/v1`),
       openrouter: providerOverride(rawProviders, 'openrouter', `${mocks.openrouter.url}/v1`),
       ollama: providerOverride(rawProviders, 'ollama', mocks.ollama.url),
     },
-    analytics: { ...rawAnalytics, ...(args.analyticsPath !== undefined ? { path: args.analyticsPath } : {}) },
+    ...(workload === 'presets-on'
+      ? {
+          routing: {
+            ...rawRouting,
+            policy: PRESETS_ON_POLICY,
+            equivalence_presets: [...PRESETS_ON_CONFIG.equivalencePresets],
+          },
+        }
+      : {}),
+    analytics: { ...rawAnalytics, ...(analyticsPath !== undefined ? { path: analyticsPath } : {}) },
     server: { ...rawServer, host: '127.0.0.1' },
   };
   return ConfigSchema.parse(merged);
 }
 
-// ---------------------------------------------------------------- main
+// ---------------------------------------------------------------- the presets-on workload
 
-async function main(): Promise<void> {
-  const parsed = parseArgs(process.argv.slice(2));
-  if ('exit' in parsed) {
-    process.exitCode = parsed.exit;
-    return;
-  }
-  const args = parsed;
+/** The presets-on workload: the savings benchmark's realistic workload, built from its own seed. */
+export function presetsOnRequests(): WorkloadRequest[] {
+  return generateRealisticWorkload(WORKLOAD_SEED);
+}
 
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  const repoRoot = path.join(here, '..');
-  const demoConfigPath = path.join(repoRoot, 'examples', 'demo.yaml');
+/** Sends one request of the presets-on workload; resolves with the answer's status and headers once drained. */
+export async function sendWorkloadRequest(
+  tollwiseUrl: string,
+  request: WorkloadRequest,
+): Promise<{ readonly status: number; readonly headers: Headers }> {
+  const anthropic = request.format === 'anthropic';
+  const response = await fetch(`${tollwiseUrl}${anthropic ? '/v1/messages' : '/v1/chat/completions'}`, {
+    method: 'POST',
+    headers: anthropic ? ANTHROPIC_HEADERS : OPENAI_HEADERS,
+    body: JSON.stringify(request.body),
+  });
+  await response.text().catch(() => undefined);
+  return { status: response.status, headers: response.headers };
+}
 
+// ---------------------------------------------------------------- the demo session
+
+export interface DemoSessionOptions {
+  readonly workload: DemoWorkload;
+  /** Port Tollwise listens on, on 127.0.0.1; 0 for an ephemeral one. Default: server.port in examples/demo.yaml. */
+  readonly port?: number;
+  /** Overrides analytics.path in examples/demo.yaml; only used when openAnalytics is not given. */
+  readonly analyticsPath?: string;
+  /** Opens the event store the dashboard reads. Default: SQLite at analytics.path, relative to the repository. */
+  readonly openAnalytics?: (config: Config, logger: Logger) => EventStore;
+  /** Rewrites each outcome before it is stored, called in outcome order (index 0 first). Default: none. */
+  readonly stampOutcome?: (outcome: RequestOutcome, index: number) => RequestOutcome;
+  /** The clock the metrics API measures its ranges back from (see ServerOptions.metricsClock). */
+  readonly metricsClock?: () => Date;
+  readonly quiet?: boolean;
+}
+
+export interface DemoSession {
+  readonly url: string;
+  readonly config: Config;
+  /** Where the analytics database is, when the default SQLite store was opened. */
+  readonly analyticsFile: string | undefined;
+  /** How many request outcomes have been handed to the event store so far. */
+  outcomeCount(): number;
+  /** Writes every queued outcome to the event store. */
+  flush(): Promise<void>;
+  /** Checks every enabled provider's health now; resolves when each check has finished. */
+  checkHealthNow(): Promise<void>;
+  /** Stops Tollwise, the health monitor and the mocks, and closes the event store. Safe to call twice. */
+  close(): Promise<void>;
+}
+
+/**
+ * Starts the mocks and an in-process Tollwise on 127.0.0.1 configured for `workload`, with every
+ * request outcome stored in the event store the dashboard reads. Used by `npm run demo` and by
+ * scripts/record-demo-snapshot.ts.
+ */
+export async function startDemoSession(options: DemoSessionOptions): Promise<DemoSession> {
+  const quiet = options.quiet ?? false;
   const catalog = loadCatalog();
-  const rng = mulberry32(hashSeed(args.seed));
-
   registerSecretValues(Object.values(DEMO_ENV));
 
-  if (!args.quiet) console.log('tollwise demo: starting five local mock providers ...');
-  const mocks = await startMockProviders(catalog);
-
-  const config = buildDemoConfig(demoConfigPath, mocks, args);
-  const logger = createLogger({ level: args.quiet ? 'warn' : config.logging.level, sink: process.stderr });
+  const mocks = await startMockProviders(catalog, options.workload);
+  let config: Config;
+  try {
+    config = buildDemoConfig(mocks, options.workload, options.analyticsPath);
+  } catch (error) {
+    await closeMocks(mocks);
+    throw error;
+  }
+  const logger = createLogger({ level: quiet ? 'warn' : config.logging.level, sink: process.stderr });
   const registry = buildRegistry(config, DEMO_ENV);
   const healthMonitor: HealthMonitor = createHealthMonitor({ adapters: registry.enabled, env: DEMO_ENV, logger });
 
-  const analyticsFile = path.resolve(repoRoot, config.analytics.path);
-  const analytics: EventStore = openSqliteEventStore({ file: analyticsFile, logger });
-  const detachAnalytics = onRequestOutcome((outcome) => analytics.record(outcome));
+  const analyticsFile =
+    options.openAnalytics === undefined ? path.resolve(REPO_ROOT, config.analytics.path) : undefined;
+  const analytics: EventStore =
+    analyticsFile === undefined
+      ? (options.openAnalytics as NonNullable<DemoSessionOptions['openAnalytics']>)(config, logger)
+      : openSqliteEventStore({ file: analyticsFile, logger });
+  let outcomes = 0;
+  const detachAnalytics = onRequestOutcome((outcome) => {
+    const index = outcomes;
+    outcomes += 1;
+    analytics.record(options.stampOutcome === undefined ? outcome : options.stampOutcome(outcome, index));
+  });
 
   const server = createTollwiseServer({
     maxBodyBytes: config.server.max_body_size,
@@ -594,74 +741,124 @@ async function main(): Promise<void> {
     listenHost: config.server.host,
     proxy: { config, catalog, registry, env: DEMO_ENV },
     analytics,
+    ...(options.metricsClock !== undefined ? { metricsClock: options.metricsClock } : {}),
   });
 
-  const closeMocks = () =>
-    Promise.all([
-      mocks.anthropicFront.close(),
-      mocks.anthropic.close(),
-      mocks.openai.close(),
-      mocks.deepseek.close(),
-      mocks.openrouter.close(),
-      mocks.ollama.close(),
-    ]);
-
-  const listenPort = args.port ?? config.server.port;
   let address: import('node:net').AddressInfo;
   try {
-    address = await listen(server, config.server.host, listenPort);
+    address = await listen(server, config.server.host, options.port ?? config.server.port);
   } catch (error) {
-    await closeMocks();
+    detachAnalytics();
+    await analytics.close();
+    await closeMocks(mocks);
     throw error;
   }
-  const tollwiseUrl = baseUrl(config.server.host, address.port);
   healthMonitor.start();
 
   let closed = false;
-  const shutdown = async (): Promise<void> => {
-    if (closed) return;
-    closed = true;
-    healthMonitor.stop();
-    detachAnalytics();
-    await stopServer(server, 2000);
-    await analytics.close();
-    await closeMocks();
+  return {
+    url: baseUrl(config.server.host, address.port),
+    config,
+    analyticsFile,
+    outcomeCount: () => outcomes,
+    flush: () => analytics.flush(),
+    checkHealthNow: async () => {
+      await Promise.all(registry.enabled.map((adapter) => healthMonitor.checkNow(adapter.id)));
+    },
+    close: async () => {
+      if (closed) return;
+      closed = true;
+      healthMonitor.stop();
+      detachAnalytics();
+      await stopServer(server, 2000);
+      await analytics.close();
+      await closeMocks(mocks);
+    },
   };
+}
+
+// ---------------------------------------------------------------- main
+
+/** Runs `npm run demo` with `argv` (the arguments after the script name); resolves once it has stopped. */
+export async function runDemoCli(argv: readonly string[]): Promise<void> {
+  const parsed = parseArgs(argv);
+  if ('exit' in parsed) {
+    process.exitCode = parsed.exit;
+    return;
+  }
+  const args = parsed;
+  const rng = mulberry32(hashSeed(args.seed));
+
+  if (!args.quiet) console.log('tollwise demo: starting five local mock providers ...');
+  const session = await startDemoSession({
+    workload: args.workload,
+    quiet: args.quiet,
+    ...(args.port !== undefined ? { port: args.port } : {}),
+    ...(args.analyticsPath !== undefined ? { analyticsPath: args.analyticsPath } : {}),
+  });
 
   let interrupted = false;
+  let wake: (() => void) | undefined;
   const onSignal = (): void => {
     interrupted = true;
+    wake?.();
   };
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
 
-  console.log(`tollwise demo: proxy ready at ${tollwiseUrl}`);
-  console.log(`tollwise demo: dashboard at ${tollwiseUrl}/dashboard`);
-  if (!args.quiet) console.log(`tollwise demo: analytics stored at ${analyticsFile}`);
-  console.log(
-    args.count === undefined
-      ? 'tollwise demo: sending traffic until Ctrl+C ...'
-      : `tollwise demo: sending ${args.count} request(s) ...`,
-  );
+  console.log(`tollwise demo: proxy ready at ${session.url}`);
+  console.log(`tollwise demo: dashboard at ${session.url}/dashboard`);
+  if (!args.quiet && session.analyticsFile !== undefined) {
+    console.log(`tollwise demo: analytics stored at ${session.analyticsFile}`);
+  }
 
   let sent = 0;
-  const order = shuffledScenarioOrder(rng);
   try {
-    while (!interrupted && (args.count === undefined || sent < args.count)) {
-      const scenario = order[sent % order.length] as Scenario;
-      await sendOne(tollwiseUrl, scenario, rng, sent, args.quiet);
-      sent += 1;
-      if (args.count === undefined && !interrupted) await delay(SEND_INTERVAL_MS);
+    if (args.workload === 'presets-on') {
+      const requests = presetsOnRequests();
+      const total = args.count ?? requests.length;
+      console.log(
+        `tollwise demo: sending ${total} request(s) of the savings benchmark's realistic workload ` +
+          `(policy ${PRESETS_ON_POLICY}, presets ${PRESETS_ON_CONFIG.equivalencePresets.join(', ')}) ...`,
+      );
+      while (!interrupted && sent < total) {
+        const request = requests[sent % requests.length] as WorkloadRequest;
+        const answer = await sendWorkloadRequest(session.url, request);
+        if (!args.quiet) printLine(sent, request.archetype, answer.status, answer.headers);
+        sent += 1;
+      }
+      if (args.count === undefined && !interrupted) {
+        console.log('tollwise demo: workload sent; the dashboard stays up until Ctrl+C ...');
+        await new Promise<void>((resolve) => {
+          wake = resolve;
+        });
+      }
+    } else {
+      console.log(
+        args.count === undefined
+          ? 'tollwise demo: sending traffic until Ctrl+C ...'
+          : `tollwise demo: sending ${args.count} request(s) ...`,
+      );
+      const order = shuffledScenarioOrder(rng);
+      while (!interrupted && (args.count === undefined || sent < args.count)) {
+        const scenario = order[sent % order.length] as Scenario;
+        await sendOne(session.url, scenario, rng, sent, args.quiet);
+        sent += 1;
+        if (args.count === undefined && !interrupted) await delay(SEND_INTERVAL_MS);
+      }
     }
   } finally {
     process.off('SIGINT', onSignal);
     process.off('SIGTERM', onSignal);
-    await shutdown();
+    await session.close();
   }
   console.log(`tollwise demo: sent ${sent} request(s); stopped cleanly.`);
 }
 
-main().catch((error: unknown) => {
-  console.error(`tollwise demo: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
-  process.exitCode = 1;
-});
+const invokedPath = process.argv[1];
+if (invokedPath !== undefined && path.resolve(invokedPath) === fileURLToPath(import.meta.url)) {
+  runDemoCli(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(`tollwise demo: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+    process.exitCode = 1;
+  });
+}

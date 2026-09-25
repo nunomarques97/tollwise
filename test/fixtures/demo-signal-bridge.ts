@@ -11,4 +11,5 @@ process.on('message', (message: unknown) => {
   process.emit(message);
 });
 
-await import('../../scripts/demo.ts');
+const { runDemoCli } = await import('../../scripts/demo.ts');
+await runDemoCli(process.argv.slice(2));

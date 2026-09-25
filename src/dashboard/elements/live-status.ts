@@ -1,15 +1,17 @@
 // <tw-live-status>: the header's connection indicator. An 8 px shape and a text label; the text always
-// names the state and the shape changes with it, so colour is never the only signal.
+// names the state and the shape changes with it, so colour is never the only signal. The static demo has
+// a state of its own, "Static demo": it is never shown as live, connecting or paused.
 
 import { h, prefersReducedMotion } from '../dom.ts';
 
-export type LiveState = 'live' | 'connecting' | 'paused' | 'offline';
+export type LiveState = 'live' | 'connecting' | 'paused' | 'offline' | 'demo';
 
 const LABELS: Readonly<Record<LiveState, string>> = {
   live: 'Live',
   connecting: 'Connecting',
   paused: 'Reconnecting',
   offline: 'Not connected',
+  demo: 'Static demo',
 };
 
 export class LiveStatus extends HTMLElement {
@@ -26,7 +28,7 @@ export class LiveStatus extends HTMLElement {
 
   get state(): LiveState {
     const value = this.dataset.state;
-    return value === 'live' || value === 'paused' || value === 'offline' ? value : 'connecting';
+    return value === 'live' || value === 'paused' || value === 'offline' || value === 'demo' ? value : 'connecting';
   }
 
   set(state: LiveState): void {

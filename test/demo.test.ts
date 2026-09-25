@@ -212,3 +212,68 @@ test('Ctrl+C (SIGINT) during an unbounded run shuts the mocks and Tollwise down 
   assert.ok(stdout.includes('stopped cleanly'), `expected the clean-shutdown line; stdout:\n${stdout}`);
   assert.ok(countRows(dbFile) > 0, 'expected at least one request to have been recorded before the interrupt');
 });
+
+/** Runs the demo with `args` to completion and resolves with its exit code, stdout and stderr. */
+function runDemoArgs(args: readonly string[]): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [demoPath, ...args], {
+      cwd: workDir,
+      env: childEnv(),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    children.add(child);
+    let stdout = '';
+    let stderr = '';
+    child.stdout?.setEncoding('utf8');
+    child.stdout?.on('data', (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr?.setEncoding('utf8');
+    child.stderr?.on('data', (chunk: string) => {
+      stderr += chunk;
+    });
+    child.once('exit', (code) => resolve({ code, stdout, stderr }));
+  });
+}
+
+test('--help documents both workloads and an unknown workload is rejected', async () => {
+  const help = await runDemoArgs(['--help']);
+  assert.equal(help.code, 0, help.stderr);
+  assert.match(help.stdout, /--workload demo\|presets-on/);
+  assert.match(help.stdout, /presets-on {2}the savings benchmark's realistic workload/);
+
+  const unknown = await runDemoArgs(['--workload', 'nightly', '--port', '0']);
+  assert.equal(unknown.code, 2, unknown.stdout);
+  assert.match(unknown.stderr, /--workload needs one of: demo, presets-on/);
+});
+
+test('--workload presets-on sends the benchmark workload with the frontier and small-fast presets', async () => {
+  const dbFile = path.join(workDir, 'presets-on.db');
+  const run = await runDemoArgs([
+    '--workload',
+    'presets-on',
+    '--count',
+    '100',
+    '--port',
+    '0',
+    '--analytics-path',
+    dbFile,
+  ]);
+  assert.equal(run.code, 0, `stdout:\n${run.stdout}\nstderr:\n${run.stderr}`);
+  assert.match(run.stdout, /policy cheapest, presets frontier, small-fast/);
+  assert.equal(run.stdout.split(/\r?\n/).filter((line) => /^\[\s*\d+]/.test(line)).length, 100);
+
+  // The same totals as the benchmark's presets-on / cheapest run (test/demo-snapshot.test.ts pins the
+  // exact figures through the recorded snapshot).
+  const db = new DatabaseSync(dbFile, { readOnly: true });
+  try {
+    const row = db
+      .prepare(
+        "SELECT COUNT(*) AS n, SUM(substituted) AS substituted, SUM(status = 'complete') AS ok FROM request_events",
+      )
+      .get() as { n: number; substituted: number; ok: number };
+    assert.deepEqual({ ...row }, { n: 100, substituted: 87, ok: 100 });
+  } finally {
+    db.close();
+  }
+});

@@ -69,7 +69,20 @@ export interface StartMockProviderOptions {
   readonly models?: ModelLists;
   /** Scripted responses consumed in call order for POST /v1/chat/completions and /v1/messages. */
   readonly responses?: readonly ScriptedResponse[];
+  /**
+   * Token usage a non-streamed answer reports, computed from the request body it answers. Default:
+   * a fixed 10 input and 5 output tokens. Streamed answers always report the fixed counts.
+   */
+  readonly usage?: (body: Record<string, unknown>) => MockUsage;
 }
+
+/** Token counts a mock answer reports in its `usage` object. */
+export interface MockUsage {
+  readonly input: number;
+  readonly output: number;
+}
+
+const FIXED_USAGE: MockUsage = { input: 10, output: 5 };
 
 /** What the mock wrote for one streamed response. */
 export interface RecordedStream {
@@ -231,9 +244,14 @@ function resolveModel(record: Record<string, unknown> | undefined, script: Scrip
   return typeof modelValue === 'string' ? modelValue : 'mock-model';
 }
 
-function buildOpenAiCompletionBody(model: string, content: ResolvedContent): unknown {
+function buildOpenAiCompletionBody(model: string, content: ResolvedContent, tokens: MockUsage = FIXED_USAGE): unknown {
   const id = nextId('chatcmpl');
   const created = Math.floor(Date.now() / 1000);
+  const usage = {
+    prompt_tokens: tokens.input,
+    completion_tokens: tokens.output,
+    total_tokens: tokens.input + tokens.output,
+  };
 
   if (content.kind === 'tool_call') {
     return {
@@ -258,7 +276,7 @@ function buildOpenAiCompletionBody(model: string, content: ResolvedContent): unk
           finish_reason: 'tool_calls',
         },
       ],
-      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+      usage,
     };
   }
 
@@ -274,12 +292,13 @@ function buildOpenAiCompletionBody(model: string, content: ResolvedContent): unk
         finish_reason: 'stop',
       },
     ],
-    usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    usage,
   };
 }
 
-function buildAnthropicMessageBody(model: string, content: ResolvedContent): unknown {
+function buildAnthropicMessageBody(model: string, content: ResolvedContent, tokens: MockUsage = FIXED_USAGE): unknown {
   const id = nextId('msg');
+  const usage = { input_tokens: tokens.input, output_tokens: tokens.output };
 
   if (content.kind === 'tool_call') {
     return {
@@ -290,7 +309,7 @@ function buildAnthropicMessageBody(model: string, content: ResolvedContent): unk
       content: [{ type: 'tool_use', id: nextId('toolu'), name: content.toolName, input: content.toolArguments ?? {} }],
       stop_reason: 'tool_use',
       stop_sequence: null,
-      usage: { input_tokens: 10, output_tokens: 5 },
+      usage,
     };
   }
 
@@ -302,7 +321,7 @@ function buildAnthropicMessageBody(model: string, content: ResolvedContent): unk
     content: [{ type: 'text', text: content.text ?? '' }],
     stop_reason: 'end_turn',
     stop_sequence: null,
-    usage: { input_tokens: 10, output_tokens: 5 },
+    usage,
   };
 }
 
@@ -578,6 +597,7 @@ async function handleRequest(
     const model = resolveModel(record, script);
     const content = resolveContent(body, script);
     const wantsStream = record?.stream === true;
+    const tokens = opts.usage === undefined || record === undefined ? FIXED_USAGE : opts.usage(record);
     const newStream = (): StreamRecord => {
       const stream: StreamRecord = { text: '', firstFrameAt: null, frames: 0, chunkDelayMs: opts.chunkDelayMs ?? 0 };
       streams.push(stream);
@@ -590,12 +610,12 @@ async function handleRequest(
         const includeUsage = streamOptions?.include_usage === true;
         await streamOpenAi(res, model, content, includeUsage, opts, newStream());
       } else {
-        sendJson(res, 200, buildOpenAiCompletionBody(model, content));
+        sendJson(res, 200, buildOpenAiCompletionBody(model, content, tokens));
       }
     } else if (wantsStream) {
       await streamAnthropic(res, model, content, opts, newStream());
     } else {
-      sendJson(res, 200, buildAnthropicMessageBody(model, content));
+      sendJson(res, 200, buildAnthropicMessageBody(model, content, tokens));
     }
     return;
   }

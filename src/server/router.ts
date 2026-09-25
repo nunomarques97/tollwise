@@ -64,6 +64,8 @@ export interface RouteContext {
   readonly proxy?: ProxySettings;
   /** The local event store the metrics routes read; undefined when analytics is off. */
   readonly analytics?: EventStore;
+  /** The clock the metrics routes measure their range back from; undefined means the real clock. */
+  readonly metricsClock?: () => Date;
   /** The live event streams of GET /api/events. */
   readonly events: EventStreamHub;
   /** Folder the dashboard's static files are served from; undefined means dist/dashboard (./dashboard.ts). */

@@ -27,7 +27,7 @@ import Anthropic, {
 } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import type { Catalog, ModelEntry } from '../../src/catalog/schema.ts';
-import { type Config, type ConfigInput, ConfigSchema, type ProviderId } from '../../src/config/schema.ts';
+import { type Config, type ConfigInput, ConfigSchema } from '../../src/config/schema.ts';
 import { createLogger, type LogSink } from '../../src/log/logger.ts';
 import { buildRegistry } from '../../src/providers/registry.ts';
 import { baseUrl, createTollwiseServer, listen, stopServer } from '../../src/server/server.ts';

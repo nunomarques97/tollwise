@@ -293,3 +293,9 @@ tollwise demo: sent 20 request(s); stopped cleanly.
 ```
 
 Each numbered line is one request: the scenario, the HTTP status, the provider and model that served it, whether the model was substituted, how many providers were called, and the savings reported in `x-tollwise-savings-usd` (streamed answers carry no cost headers, so their lines have none). The demo keeps its history in `data/demo.db`, separate from `data/analytics.db`.
+
+With `--workload presets-on`, the demo sends the savings benchmark's realistic workload instead: 100 requests with the `cheapest` policy and the `frontier` and `small-fast` presets on, the traffic of the modeled presets-on scenario in [`benchmarks.md`](benchmarks.md#savings-modeled). It sends the workload once, then keeps the dashboard up until Ctrl+C. The [static demo](demo-site.md) of the dashboard is recorded from this workload.
+
+```
+npm run demo -- --workload presets-on
+```

@@ -91,7 +91,17 @@ The CI workflow runs only on a public repository, so the push of step 5 is its f
 do not tag: fix the cause in the working repository, delete the new public repository in its
 settings (it holds nothing but the export yet), and start again from step 1.
 
-## 8. Tag v0.1.0 and write the release
+## 8. Serve the static demo with GitHub Pages
+
+The export ships the built static demo in `docs/demo/` and a `docs/.nojekyll` file. In the public
+repository, open **Settings**, then **Pages**. Under **Build and deployment**, set **Source** to
+**Deploy from a branch**, set **Branch** to **main** and the folder to **/docs**, and select
+**Save**. When the deployment listed in the **Actions** tab has finished, open
+https://nunomarques97.github.io/tollwise/demo/ (with the owner and name of step 2 if they differ) in
+a private browser window and check that the dashboard loads with its "Static demo" banner. The
+README links to that address; [`docs/demo-site.md`](../docs/demo-site.md) describes the setting.
+
+## 9. Tag v0.1.0 and write the release
 
 From `.public-export/`:
 
@@ -103,14 +113,14 @@ git push origin v0.1.0
 On GitHub, open **Releases**, then **Draft a new release**, choose the tag `v0.1.0`, title it
 `Tollwise 0.1.0`, and paste the `[0.1.0]` section of `CHANGELOG.md` as its description. Publish it.
 
-## 9. Before any npm publish
+## 10. Before any npm publish
 
 The exported `package.json` keeps `"private": true`, so an accidental `npm publish` fails. The
 `v0.1.0` release does not publish to npm: Tollwise runs from source. Publishing a package is a
 separate decision; only then remove `"private": true` from `package.json` in the working
 repository, commit, and run this checklist again from step 1.
 
-## 10. Announce
+## 11. Announce
 
 Post in the order and at the times of [`launch-day-checklist.md`](launch-day-checklist.md), starting
 with its "Before launch day" steps.

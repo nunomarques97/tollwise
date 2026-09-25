@@ -12,6 +12,7 @@ import {
   breakdown,
   MAX_RECENT_LIMIT,
   MAX_TIMESERIES_BUCKETS,
+  type MetricsOptions,
   MetricsQueryError,
   type MetricsRange,
   recent,
@@ -151,12 +152,17 @@ async function withStore(context: RouteContext, serve: (store: EventStore) => Pr
   }
 }
 
+/** The clock a metrics query measures its range back from: the server's metricsClock, else the real one. */
+function metricsOptions(context: RouteContext): MetricsOptions {
+  return context.metricsClock === undefined ? {} : { now: context.metricsClock };
+}
+
 /** GET /api/metrics/summary?range= */
 export function handleSummary(context: RouteContext): Promise<void> {
   return withStore(context, async (store) => {
     const params = parseQuery(context.req.url, SUMMARY_PATH, ['range']);
     const range = oneOf(params.get('range'), RANGES, DEFAULT_RANGE, INVALID_RANGE_MESSAGE);
-    return { range, ...(await summary(store, range)) };
+    return { range, ...(await summary(store, range, metricsOptions(context))) };
   });
 }
 
@@ -167,7 +173,7 @@ export function handleTimeseries(context: RouteContext): Promise<void> {
     const range = oneOf(params.get('range'), RANGES, DEFAULT_RANGE, INVALID_RANGE_MESSAGE);
     const bucket = oneOf(params.get('bucket'), BUCKETS, DEFAULT_BUCKET[range], INVALID_BUCKET_MESSAGE);
     try {
-      return { range, bucket, buckets: await timeseries(store, range, bucket) };
+      return { range, bucket, buckets: await timeseries(store, range, bucket, metricsOptions(context)) };
     } catch (error) {
       if (error instanceof MetricsQueryError) throw new QueryError(BUCKET_TOO_FINE_MESSAGE);
       throw error;
@@ -181,7 +187,7 @@ export function handleBreakdown(context: RouteContext): Promise<void> {
     const params = parseQuery(context.req.url, BREAKDOWN_PATH, ['range', 'by']);
     const range = oneOf(params.get('range'), RANGES, DEFAULT_RANGE, INVALID_RANGE_MESSAGE);
     const by = oneOf(params.get('by'), DIMENSIONS, DEFAULT_DIMENSION, INVALID_DIMENSION_MESSAGE);
-    return { range, by, ...(await breakdown(store, range, by)) };
+    return { range, by, ...(await breakdown(store, range, by, metricsOptions(context))) };
   });
 }
 

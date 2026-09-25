@@ -67,6 +67,11 @@ export interface ServerOptions {
   readonly proxy?: ProxySettings;
   /** Backs the metrics routes (/api/metrics/*, /api/requests); undefined answers them 503. */
   readonly analytics?: EventStore;
+  /**
+   * The clock the metrics routes measure their range back from; the default is the real clock. Only a
+   * recorded snapshot of the metrics API (scripts/record-demo-snapshot.ts) pins it.
+   */
+  readonly metricsClock?: () => Date;
   /** Limits and timing of the GET /api/events streams; the defaults are in ./events.ts. */
   readonly eventStream?: EventStreamOptions;
   /** Folder the dashboard's static files are served from; the default is dist/dashboard (./dashboard.ts). */
@@ -150,6 +155,7 @@ async function dispatch(req: IncomingMessage, res: ServerResponse, path: string,
       logger: options.logger,
       events: options.events,
       ...(options.analytics !== undefined ? { analytics: options.analytics } : {}),
+      ...(options.metricsClock !== undefined ? { metricsClock: options.metricsClock } : {}),
       ...(options.healthMonitor !== undefined ? { healthMonitor: options.healthMonitor } : {}),
       ...(options.proxy !== undefined ? { proxy: options.proxy } : {}),
       ...(options.dashboardRoot !== undefined ? { dashboardRoot: options.dashboardRoot } : {}),

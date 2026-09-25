@@ -24,5 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional access key (`TOLLWISE_ACCESS_KEY`) and request checks (`Host` allow-list, `Origin` checks, refused CORS preflights) that block DNS rebinding and cross-site requests from spending a user's provider keys.
 - `tollwise` CLI: `start`, `config check`, `catalog update`.
 - `npm run demo`: runs Tollwise against local mock providers with reproducible sample traffic, so the routing and the dashboard can be tried without an account or a real API key.
+- `npm run demo -- --workload presets-on`: replays the savings benchmark's realistic workload with the `frontier` and `small-fast` presets and the `cheapest` policy, so the dashboard shows the modeled presets-on savings.
+- A static demo of the dashboard in `docs/demo/`, built by `npm run build:demo-site` from the dashboard's own sources and a snapshot recorded from that workload (`npm run demo:snapshot`), servable by GitHub Pages with no server and no network access; see `docs/demo-site.md`.
 - Documentation: configuration reference, routing behavior, API compatibility and endpoints, privacy, and measured benchmarks.
 - Reproducible benchmarks for proxy overhead and for cost savings, both with the method and results written down.
